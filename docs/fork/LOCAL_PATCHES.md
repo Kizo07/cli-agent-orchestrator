@@ -10,6 +10,7 @@ under `src/cli_agent_orchestrator/agent_system/` are tracked in
 | `src/cli_agent_orchestrator/providers/antigravity_cli.py` | `--dangerously-skip-permissions` gated by `CAO_STRICT_PERMISSIONS`/`CAO_AGY_SKIP_PERMISSIONS` | Plan V2 17.3: no unconditional permission bypass | Yes |
 | `src/cli_agent_orchestrator/providers/hermes.py` | `--yolo` gated by `CAO_STRICT_PERMISSIONS`/`CAO_HERMES_YOLO` | Plan V2 17.3 | Yes |
 | `src/cli_agent_orchestrator/providers/codex.py` | wildcard-tool yolo inference gated by `CAO_STRICT_PERMISSIONS`/`CAO_CODEX_YOLO` | Plan V2 17.3 | Yes |
+| `src/cli_agent_orchestrator/web_ui/` | force-committed built dashboard bundle (upstream gitignores it) so pinned installs serve the UI at `/` | UI missing from `uv tool install` builds | Build-artifact handling, not code |
 
 ## Additive local modules
 
