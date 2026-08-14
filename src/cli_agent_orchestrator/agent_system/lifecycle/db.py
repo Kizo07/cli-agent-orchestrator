@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -59,9 +59,14 @@ CREATE TABLE IF NOT EXISTS handoffs (
     recipient_provider_family TEXT,
     contract_sha256 TEXT,
     artifact_sha256 TEXT,
+    artifact_manifest_id TEXT,
+    verification_evidence_id TEXT,
     status TEXT NOT NULL,
     findings_json TEXT,
     disposition TEXT,
+    next_action TEXT,
+    schema_version TEXT NOT NULL DEFAULT 'handoff/1',
+    policy_version TEXT,
     idempotency_key TEXT UNIQUE,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
     accepted_at TEXT,

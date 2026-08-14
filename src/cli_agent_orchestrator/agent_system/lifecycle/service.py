@@ -190,8 +190,20 @@ class LifecycleService:
         reviewer_session: str,
         reviewer_provider_family: str,
         require_different_family: bool = True,
+        idempotency_key: str | None = None,
+        expires_in_seconds: int | None = None,
     ) -> str:
-        """Create an independent review handoff (plan V2 §7.4, §13.3)."""
+        """Create an independent review handoff (plan V2 §7.4, §13.3).
+
+        Repeated delivery with the same idempotency key returns the existing
+        handoff instead of duplicating it (plan V2 §13.4 gate).
+        """
+        if idempotency_key:
+            existing = self.conn.execute(
+                "SELECT handoff_id FROM handoffs WHERE idempotency_key=?", (idempotency_key,)
+            ).fetchone()
+            if existing:
+                return existing["handoff_id"]
         task = self._require("tasks", task_id)
         if task["status"] != S.TASK_VERIFYING or task["verification_status"] != "passed":
             raise GateFailure("verification must pass before review")
@@ -205,11 +217,17 @@ class LifecycleService:
                 f"reviewer provider family must differ (both {reviewer_provider_family})"
             )
         handoff_id = new_id("ho")
+        expires_at = None
+        if expires_in_seconds is not None:
+            expires_at = self.conn.execute(
+                "SELECT strftime('%Y-%m-%dT%H:%M:%fZ','now',?) AS t",
+                (f"{int(expires_in_seconds):+d} seconds",),
+            ).fetchone()["t"]
         self.conn.execute(
             "INSERT INTO handoffs (handoff_id, run_id, task_id, kind, sender_role, sender_session,"
             " recipient_role, recipient_session, recipient_provider_family,"
-            " contract_sha256, artifact_sha256, status)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            " contract_sha256, artifact_sha256, status, idempotency_key, expires_at, policy_version)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 handoff_id,
                 task["run_id"],
@@ -223,6 +241,9 @@ class LifecycleService:
                 task["contract_sha256"],
                 task["artifact_sha256"],
                 S.HO_DRAFT,
+                idempotency_key,
+                expires_at,
+                self._run_policy_version(task["run_id"]),
             ),
         )
         self._transition_handoff(handoff_id, S.HO_VALIDATED)
@@ -234,6 +255,15 @@ class LifecycleService:
         self._event(task["run_id"], task_id, "review_offered", {"handoff": handoff_id})
         self.conn.commit()
         return handoff_id
+
+    def _run_policy_version(self, run_id: str) -> str | None:
+        run = self.conn.execute("SELECT policy_bundle_json FROM runs WHERE run_id=?", (run_id,)).fetchone()
+        if not run:
+            return None
+        try:
+            return json.loads(run["policy_bundle_json"]).get("bundle_hash")
+        except Exception:
+            return None
 
     def accept_handoff(self, handoff_id: str) -> None:
         self._transition_handoff(handoff_id, S.HO_ACCEPTED)
@@ -271,6 +301,29 @@ class LifecycleService:
                 (S.HO_RETURNED, findings_json, handoff_id),
             )
             self.transition_task(ho["task_id"], S.TASK_REWORK)
+            # CAO creates the rework handoff back to the implementer (§13.3 step 6)
+            rework_id = new_id("ho")
+            self.conn.execute(
+                "INSERT INTO handoffs (handoff_id, run_id, task_id, kind, sender_role,"
+                " recipient_role, recipient_session, artifact_sha256, status, next_action,"
+                " schema_version, policy_version)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    rework_id,
+                    ho["run_id"],
+                    ho["task_id"],
+                    "rework",
+                    "reviewer",
+                    task["role"],
+                    task["session_id"],
+                    task["artifact_sha256"],
+                    S.HO_OFFERED,
+                    "resubmit artifact addressing findings",
+                    "handoff/1",
+                    self._run_policy_version(ho["run_id"]),
+                ),
+            )
+            self._event(task["run_id"], task["task_id"], "rework_offered", {"handoff": rework_id})
         self._event(task["run_id"], task["task_id"], "review_closed", {"approved": approved})
         self.conn.commit()
 
@@ -359,6 +412,15 @@ class LifecycleService:
             "usage_marked_failed": len(stuck_usage),
             "tasks_needing_attention": [r["task_id"] for r in stuck_tasks],
         }
+        # expire non-terminal handoffs past their expiry (crash-safe sweep)
+        expired = self.conn.execute(
+            "SELECT handoff_id FROM handoffs WHERE status IN (?,?,?)"
+            " AND expires_at IS NOT NULL AND expires_at < strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+            (S.HO_DRAFT, S.HO_VALIDATED, S.HO_OFFERED),
+        ).fetchall()
+        for row in expired:
+            self.conn.execute("UPDATE handoffs SET status=? WHERE handoff_id=?", (S.HO_EXPIRED, row["handoff_id"]))
+        report["handoffs_expired"] = len(expired)
         self._event(None, None, "reconcile", report)
         self.conn.commit()
         return report
