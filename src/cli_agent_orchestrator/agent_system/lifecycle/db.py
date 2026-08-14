@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS usage (
     pid INTEGER,
     status TEXT NOT NULL,
     started_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-    finished_at TEXT
+    finished_at TEXT,
+    legacy_json TEXT
 );
 
 CREATE TABLE IF NOT EXISTS evaluations (
@@ -93,7 +94,19 @@ CREATE TABLE IF NOT EXISTS evaluations (
     rubric_version TEXT NOT NULL,
     weights_version TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-    superseded_by TEXT
+    superseded_by TEXT,
+    legacy_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS quirks (
+    quirk_id TEXT PRIMARY KEY,
+    tool TEXT,
+    model TEXT,
+    symptom TEXT,
+    workaround TEXT,
+    status TEXT,
+    legacy_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
 CREATE TABLE IF NOT EXISTS events (
