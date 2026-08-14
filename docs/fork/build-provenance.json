@@ -4,9 +4,9 @@
   "upstream_base_tag": "v2.4.1",
   "upstream_base_commit": "752be53f19c15b328a67a4e64c3d3c87c38b2d23",
   "local_release": "agent-system-v0.1.0",
-  "local_commit": null,
+  "local_commit": "f0ac33b2bba040ef7294b10b0a692cffdcee522a",
   "schema_version": "cao-agent-system/1",
-  "built_at": null,
+  "built_at": "2026-08-14T03:25:25+00:00",
   "dirty_build": false,
   "notes": "local_commit and built_at are stamped at release time by scripts/stamp-provenance.py"
 }
