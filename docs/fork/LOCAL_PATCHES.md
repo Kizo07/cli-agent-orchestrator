@@ -11,7 +11,7 @@ under `src/cli_agent_orchestrator/agent_system/` are tracked in
 | `src/cli_agent_orchestrator/providers/hermes.py` | `--yolo` gated by `CAO_STRICT_PERMISSIONS`/`CAO_HERMES_YOLO` | Plan V2 17.3 | Yes |
 | `src/cli_agent_orchestrator/providers/codex.py` | wildcard-tool yolo inference gated by `CAO_STRICT_PERMISSIONS`/`CAO_CODEX_YOLO` | Plan V2 17.3 | Yes |
 | `src/cli_agent_orchestrator/web_ui/` | force-committed built dashboard bundle (upstream gitignores it) so pinned installs serve the UI at `/` | UI missing from `uv tool install` builds | Build-artifact handling, not code |
-| `web/src/api.ts`, `web/src/App.tsx`, `web/src/components/TerminalView.tsx` | UI control-token support: Bearer header on REST, `access_token` on PTY websocket, token gate banner on missing/401 | Plan V2 17.2: upstream UI predates the control token and 401s on every control op | Yes (upstream has no auth to integrate with) |
+| `web/src/api.ts`, `web/src/App.tsx`, `web/src/components/TerminalView.tsx`, `web/src/components/AgentPanel.tsx` | UI control-token support (Bearer on REST, `access_token` on PTY ws, token gate banner) + per-session **Attach** button that opens the tmux-backed terminal or re-focuses it if already open | Plan V2 17.2 auth + interactive attach from the dashboard | Yes (upstream has no auth to integrate with) |
 
 ## Additive local modules
 

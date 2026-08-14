@@ -160,6 +160,36 @@ export function AgentPanel() {
     setLiveTerminal({ id: terminalId, provider, agentProfile })
   }
 
+  const [attachFocusSignal, setAttachFocusSignal] = useState(0)
+  const [attaching, setAttaching] = useState<string | null>(null)
+
+  // Attach button: open the session's tmux-backed terminal in the dashboard.
+  // If that terminal is already open, just re-focus it (no remount, no
+  // reconnect — the PTY stream and scrollback stay intact).
+  const attachSession = async (s: { id: string; name: string }) => {
+    setAttaching(s.id)
+    try {
+      const detail = await api.getSession(s.id)
+      const terminals = [...detail.terminals]
+      if (!terminals.length) {
+        showSnackbar({ type: 'error', message: `${s.name || s.id} has no terminals to attach` })
+        return
+      }
+      // Prefer the most recently active terminal in the session
+      terminals.sort((a, b) => (b.last_active || '').localeCompare(a.last_active || ''))
+      const target = terminals[0]
+      if (liveTerminal && terminals.some(t => t.id === liveTerminal.id)) {
+        setAttachFocusSignal(n => n + 1)  // already open — take the user there
+        return
+      }
+      setLiveTerminal({ id: target.id, provider: target.provider, agentProfile: target.agent_profile })
+    } catch (e: any) {
+      showSnackbar({ type: 'error', message: e.message || 'Failed to attach to session' })
+    } finally {
+      setAttaching(null)
+    }
+  }
+
   // Fetch working directories for terminals in session detail
   useEffect(() => {
     if (!activeSessionDetail?.terminals.length) return
@@ -249,6 +279,15 @@ export function AgentPanel() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={e => { e.stopPropagation(); attachSession(s) }}
+                    disabled={attaching === s.id}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:text-white bg-emerald-900/30 hover:bg-emerald-600 border border-emerald-700/50 rounded-lg transition-colors disabled:opacity-40"
+                    title="Attach to this session's terminal (opens it, or focuses it if already open)"
+                  >
+                    <TermIcon size={12} />
+                    {attaching === s.id ? 'Attaching…' : 'Attach'}
+                  </button>
                   <button
                     onClick={e => { e.stopPropagation(); deleteSession(s.id) }}
                     className="p-1.5 text-gray-500 hover:text-red-400 transition-colors rounded"
@@ -461,6 +500,7 @@ export function AgentPanel() {
           terminalId={liveTerminal.id}
           provider={liveTerminal.provider}
           agentProfile={liveTerminal.agentProfile}
+          focusSignal={attachFocusSignal}
           onClose={() => setLiveTerminal(null)}
         />
       )}

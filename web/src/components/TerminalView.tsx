@@ -10,10 +10,13 @@ interface TerminalViewProps {
   provider?: string
   agentProfile?: string | null
   onClose: () => void
+  /** Bumping this number re-focuses the already-mounted terminal (attach button). */
+  focusSignal?: number
 }
 
-export function TerminalView({ terminalId, provider, agentProfile, onClose }: TerminalViewProps) {
+export function TerminalView({ terminalId, provider, agentProfile, onClose, focusSignal }: TerminalViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const termRef = useRef<Terminal | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -43,6 +46,7 @@ export function TerminalView({ terminalId, provider, agentProfile, onClose }: Te
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)
     term.open(el)
+    termRef.current = term
 
     // Connect WebSocket (control-token auth via access_token query param)
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -117,8 +121,17 @@ export function TerminalView({ terminalId, provider, agentProfile, onClose }: Te
       resizeObserver.disconnect()
       ws.close()
       term.dispose()
+      termRef.current = null
     }
   }, [terminalId])
+
+  // "Already open" attach: the parent bumps focusSignal instead of remounting,
+  // so the PTY stream and scrollback stay intact and the cursor just refocuses.
+  useEffect(() => {
+    if (focusSignal !== undefined && focusSignal > 0) {
+      termRef.current?.focus()
+    }
+  }, [focusSignal])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#0d1117' }}>
@@ -142,7 +155,7 @@ export function TerminalView({ terminalId, provider, agentProfile, onClose }: Te
         </div>
       </div>
       {/* Terminal — absolute positioning gives xterm.js real pixel dimensions to measure */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }} onClick={() => termRef.current?.focus()}>
         <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
       </div>
     </div>
