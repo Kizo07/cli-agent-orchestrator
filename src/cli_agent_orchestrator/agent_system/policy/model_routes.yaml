@@ -1,0 +1,22 @@
+# CAO model route policy (plan V2 §10.2).
+#
+# Aliases are policy; exact model identifiers are allowlisted strings sent to
+# the provider — never inferred. The resolved model is captured in usage and
+# scorecard records by the lifecycle service.
+schema_version: model-routes/1
+
+aliases:
+  qwen-default:
+    provider: opencode            # CAO provider id
+    provider_family: alibaba-token-plan
+    opencode_provider: alibaba-token-plan   # provider block in opencode.jsonc
+    # qwen3.7-plus verified on the Token Plan endpoint with the matching
+    # DASHSCOPE_API_KEY pair (canary 2026-08-13), as initially recommended.
+    candidates:
+      - qwen3.7-plus
+    fallbacks:
+      - qwen3.8-max
+      - qwen3.6-flash
+
+excluded_providers:
+  - qwen_cli    # plan V2 §10.3: no Qwen CLI route; access via OpenCode only
