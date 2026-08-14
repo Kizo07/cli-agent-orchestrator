@@ -1,5 +1,25 @@
 const BASE = ''  // Vite proxy handles routing to backend
 
+// agent-system fork (plan V2 17.2): the control plane requires
+// CAO_CONTROL_TOKEN on every control operation. The UI keeps the token in
+// localStorage and attaches it as a Bearer header (REST) or access_token
+// query param (PTY websocket).
+const TOKEN_KEY = 'cao_control_token'
+
+export function getControlToken(): string {
+  try { return localStorage.getItem(TOKEN_KEY) || '' } catch { return '' }
+}
+
+export function setControlToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token.trim())
+}
+
+/** Query-string auth for the PTY websocket handshake. */
+export function wsAuthQuery(): string {
+  const t = getControlToken()
+  return t ? `?access_token=${encodeURIComponent(t)}` : ''
+}
+
 /**
  * Error thrown by fetchJSON on a non-OK response. Carries the HTTP status and
  * the server's `detail` string so callers can branch on them (e.g. the graph
@@ -18,7 +38,14 @@ async function fetchJSON<T>(url: string, opts?: RequestInit & { timeoutMs?: numb
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), opts?.timeoutMs ?? 10000)
   try {
-    const res = await fetch(`${BASE}${url}`, { ...opts, signal: controller.signal })
+    const headers: Record<string, string> = { ...(opts?.headers as Record<string, string> | undefined) }
+    const token = getControlToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const res = await fetch(`${BASE}${url}`, { ...opts, headers, signal: controller.signal })
+    if (res.status === 401) {
+      // Surface a token prompt app-wide (handled in App.tsx).
+      window.dispatchEvent(new Event('cao-auth-required'))
+    }
     if (!res.ok) {
       // Best-effort read of the JSON error body to expose the server's
       // `detail` without leaking a full response. A non-JSON body is fine —

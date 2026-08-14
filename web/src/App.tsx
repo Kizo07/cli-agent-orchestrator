@@ -1,5 +1,5 @@
 import { useEffect, useState, Suspense } from 'react'
-import { api } from './api'
+import { api, getControlToken, setControlToken } from './api'
 import { useStore } from './store'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { DashboardHome } from './components/DashboardHome'
@@ -51,10 +51,49 @@ function Snackbar() {
   )
 }
 
+function TokenGate({ onSaved }: { onSaved: () => void }) {
+  const [value, setValue] = useState('')
+  return (
+    <div className="border-b border-amber-700/50 bg-amber-900/20">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+        <Info size={16} className="text-amber-400 shrink-0" />
+        <span className="text-sm text-amber-200">
+          Control token required — paste CAO_CONTROL_TOKEN
+        </span>
+        <input
+          type="password"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && value.trim()) {
+              setControlToken(value)
+              onSaved()
+            }
+          }}
+          placeholder="control token"
+          className="flex-1 max-w-sm bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500"
+        />
+        <button
+          onClick={() => {
+            if (value.trim()) {
+              setControlToken(value)
+              onSaved()
+            }
+          }}
+          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium"
+        >
+          Connect
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [tab, setTab] = useState<TabKey>('home')
   // Default false (fail-closed): a dead backend hides the tab rather than showing a broken panel
   const [memoryEnabled, setMemoryEnabled] = useState(false)
+  const [authNeeded, setAuthNeeded] = useState(() => !getControlToken())
   const { sessions, connected, fetchSessions } = useStore()
 
   const visibleTabs = TABS.filter(t => t.key !== 'memory' || memoryEnabled)
@@ -66,6 +105,13 @@ export default function App() {
       .catch(() => {})
     const interval = setInterval(fetchSessions, 10000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Show the token gate whenever any API call comes back 401 (plan V2 17.2).
+  useEffect(() => {
+    const onAuthRequired = () => setAuthNeeded(true)
+    window.addEventListener('cao-auth-required', onAuthRequired)
+    return () => window.removeEventListener('cao-auth-required', onAuthRequired)
   }, [])
 
   // Keyboard shortcuts: Alt+1-N over the visible tabs
@@ -106,6 +152,19 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Control-token gate (agent-system fork, plan V2 17.2) */}
+      {authNeeded && (
+        <TokenGate
+          onSaved={() => {
+            setAuthNeeded(false)
+            fetchSessions()
+            api.getMemoryStatus()
+              .then(s => setMemoryEnabled(s.enabled))
+              .catch(() => {})
+          }}
+        />
+      )}
 
       {/* Tab Bar */}
       <div className="border-b border-gray-800">
