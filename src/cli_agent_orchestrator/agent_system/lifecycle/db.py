@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -106,6 +106,24 @@ CREATE TABLE IF NOT EXISTS quirks (
     workaround TEXT,
     status TEXT,
     legacy_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE TABLE IF NOT EXISTS memory_audit (
+    audit_id TEXT PRIMARY KEY,
+    scope TEXT NOT NULL,
+    scope_id TEXT,
+    key TEXT NOT NULL,
+    record_class TEXT NOT NULL,
+    content TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    status TEXT NOT NULL,
+    session_id TEXT,
+    task_id TEXT,
+    run_id TEXT,
+    policy_version TEXT,
+    approver TEXT,
+    detail TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
