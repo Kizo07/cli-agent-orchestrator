@@ -151,14 +151,23 @@ class HermesProvider(BaseProvider):
 
         hermes_profile = profile.hermesProfile if profile and profile.hermesProfile else "hermes"
 
+        # agent-system fork (plan V2 17.3): yolo is explicit under
+        # CAO_STRICT_PERMISSIONS=1 (CAO_HERMES_YOLO=1 to opt back in).
+        from cli_agent_orchestrator.agent_system.security.launch_guard import hermes_yolo_allowed
+
         command_parts = [
             hermes_profile,
             "chat",
-            "--yolo",
-            "--accept-hooks",
-            "--source",
-            "cao",
         ]
+        if hermes_yolo_allowed():
+            command_parts.append("--yolo")
+        command_parts.extend(
+            [
+                "--accept-hooks",
+                "--source",
+                "cao",
+            ]
+        )
 
         # self._model is an explicit per-call override (handoff/assign's own
         # `model` parameter) and wins over the profile's own static model

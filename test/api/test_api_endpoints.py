@@ -1432,13 +1432,18 @@ class TestMainEntryPoint:
             assert call_kwargs[0][0] is app
 
     def test_main_custom_host_port(self):
-        """main() uses custom host and port from args."""
+        """main() uses custom host and port from args.
+
+        agent-system fork (plan V2 17.2): non-loopback hosts are refused
+        unless CAO_ALLOW_REMOTE_BINDING=1, so this passthrough test uses a
+        loopback address; dedicated tests below cover the binding guard.
+        """
         with (
             patch("argparse.ArgumentParser.parse_args") as mock_args,
             patch("uvicorn.run") as mock_uvicorn,
         ):
             mock_args.return_value = MagicMock(
-                agents_dir=None, host="0.0.0.0", port=9999, terminal=None
+                agents_dir=None, host="127.0.0.1", port=9999, terminal=None
             )
 
             from cli_agent_orchestrator.api.main import main
@@ -1448,10 +1453,53 @@ class TestMainEntryPoint:
             mock_uvicorn.assert_called_once()
             call_kwargs = mock_uvicorn.call_args.kwargs
             assert mock_uvicorn.call_args.args[0] is app
-            assert call_kwargs["host"] == "0.0.0.0"
+            assert call_kwargs["host"] == "127.0.0.1"
             assert call_kwargs["port"] == 9999
             assert call_kwargs["proxy_headers"] is True
             assert "forwarded_allow_ips" in call_kwargs
+
+    def test_main_refuses_remote_binding_without_opt_in(self):
+        """agent-system fork (plan V2 17.2): binding a non-loopback host must
+        fail closed unless CAO_ALLOW_REMOTE_BINDING=1."""
+        import os as _os
+
+        with (
+            patch("argparse.ArgumentParser.parse_args") as mock_args,
+            patch("uvicorn.run") as mock_uvicorn,
+            patch.dict(_os.environ, {}, clear=False),
+        ):
+            _os.environ.pop("CAO_ALLOW_REMOTE_BINDING", None)
+            mock_args.return_value = MagicMock(
+                agents_dir=None, host="0.0.0.0", port=9999, terminal=None
+            )
+
+            from cli_agent_orchestrator.api.main import main
+
+            try:
+                with pytest.raises(SystemExit):
+                    main()
+            finally:
+                pass
+            mock_uvicorn.assert_not_called()
+
+    def test_main_allows_remote_binding_with_explicit_opt_in(self):
+        """CAO_ALLOW_REMOTE_BINDING=1 restores non-loopback binding (plan V2 17.2)."""
+        import os as _os
+
+        with (
+            patch("argparse.ArgumentParser.parse_args") as mock_args,
+            patch("uvicorn.run") as mock_uvicorn,
+            patch.dict(_os.environ, {"CAO_ALLOW_REMOTE_BINDING": "1"}),
+        ):
+            mock_args.return_value = MagicMock(
+                agents_dir=None, host="0.0.0.0", port=9999, terminal=None
+            )
+
+            from cli_agent_orchestrator.api.main import main
+
+            main()
+            mock_uvicorn.assert_called_once()
+            assert mock_uvicorn.call_args.kwargs["host"] == "0.0.0.0"
 
     def test_main_with_agents_dir(self):
         """main() sets KIRO_AGENTS_DIR when --agents-dir is provided."""
@@ -1484,8 +1532,9 @@ class TestMainEntryPoint:
         ):
             parent.attach_mock(mock_add, "add_cors")
             parent.attach_mock(mock_uvicorn, "uvicorn_run")
+            # agent-system fork: loopback host (remote binding is guarded).
             mock_args.return_value = MagicMock(
-                agents_dir=None, host="0.0.0.0", port=9999, terminal=None
+                agents_dir=None, host="127.0.0.1", port=9999, terminal=None
             )
 
             from cli_agent_orchestrator.api.main import main
@@ -1493,10 +1542,10 @@ class TestMainEntryPoint:
             main()
 
             assert parent.mock_calls == [
-                call.add_cors("0.0.0.0", 9999),
+                call.add_cors("127.0.0.1", 9999),
                 call.uvicorn_run(
                     app,
-                    host="0.0.0.0",
+                    host="127.0.0.1",
                     port=9999,
                     proxy_headers=True,
                     forwarded_allow_ips=parent.uvicorn_run.call_args.kwargs["forwarded_allow_ips"],

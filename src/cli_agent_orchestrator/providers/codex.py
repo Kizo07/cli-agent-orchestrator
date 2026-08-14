@@ -338,7 +338,13 @@ class CodexProvider(BaseProvider):
         # ~/.codex/config.toml), unless unrestricted allowed tools are enabled.
         # In practice, allowed_tools containing "*" is treated as yolo mode
         # and overrides codexProfile in the same way as an explicit yolo launch.
-        yolo = bool(self._allowed_tools and "*" in self._allowed_tools)
+        # agent-system fork (plan V2 17.3): under CAO_STRICT_PERMISSIONS=1 the
+        # wildcard-tool yolo inference is disabled; yolo requires
+        # CAO_CODEX_YOLO=1, otherwise codexProfile (or interactive defaults)
+        # governs approvals.
+        from cli_agent_orchestrator.agent_system.security.launch_guard import codex_yolo_allowed
+
+        yolo = codex_yolo_allowed(bool(self._allowed_tools and "*" in self._allowed_tools))
 
         profile = None
         if self._agent_profile is not None:

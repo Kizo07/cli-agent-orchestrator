@@ -304,7 +304,14 @@ class AntigravityCliProvider(BaseProvider):
                 "Install via: curl -fsSL https://antigravity.google/cli/install.sh | bash"
             )
 
-        command_parts = ["agy", "--dangerously-skip-permissions"]
+        # agent-system fork (plan V2 17.3): permission bypass is explicit.
+        # Upstream hardcoded the bypass; under CAO_STRICT_PERMISSIONS=1 it is
+        # only added when CAO_AGY_SKIP_PERMISSIONS=1.
+        from cli_agent_orchestrator.agent_system.security.launch_guard import agy_permission_bypass_allowed
+
+        command_parts = ["agy"]
+        if agy_permission_bypass_allowed():
+            command_parts.append("--dangerously-skip-permissions")
 
         profile = None
         if self._agent_profile is not None:

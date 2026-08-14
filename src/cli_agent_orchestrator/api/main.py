@@ -3227,6 +3227,15 @@ async def terminal_ws(websocket: WebSocket, terminal_id: str):
         await websocket.close(code=4003, reason="WebSocket access is restricted to allowed clients")
         return
 
+    # agent-system fork (plan V2 17.2): require the control token for PTY
+    # attach when CAO_CONTROL_TOKEN is configured. Token via Authorization
+    # header or the access_token query param used by the bundled viewer.
+    from cli_agent_orchestrator.agent_system.security.control_auth import ws_token_allowed
+
+    if not ws_token_allowed(websocket):
+        await websocket.close(code=4003, reason="WebSocket control token required")
+        return
+
     # Cross-site WebSocket hijacking (CWE-1385) guard. The loopback IP check
     # above is NOT sufficient: a WebSocket opened by JavaScript on any site the
     # victim visits originates from the victim's own browser, so its peer is
@@ -4171,6 +4180,16 @@ def main():
 
     host = args.host or SERVER_HOST
     port = args.port or SERVER_PORT
+
+    # agent-system fork (plan V2 17.2): refuse non-loopback binding without
+    # explicit opt-in, and enforce CAO_CONTROL_TOKEN on control operations.
+    from cli_agent_orchestrator.agent_system.security.control_auth import (
+        enforce_loopback_binding,
+        install_control_auth,
+    )
+
+    host = enforce_loopback_binding(host)
+    install_control_auth(app)
     # Extend the CORS allowlist so a custom --host/--port still permits
     # same-host browser access without requiring CAO_CORS_ORIGINS. The
     # already-installed CORSMiddleware reads the list by reference, so
