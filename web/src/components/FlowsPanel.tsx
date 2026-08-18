@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { api, Flow, AgentProfileInfo, ProviderInfo } from '../api'
 import { useStore } from '../store'
 import { ConfirmModal } from './ConfirmModal'
-import { Clock, Play, Trash2, Plus, ChevronDown, ChevronRight, Loader2, X } from 'lucide-react'
+import { Clock, Play, Trash2, Plus, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
+import { ActionIcon, Button, Group, Modal, Switch, TextInput, Textarea } from '@mantine/core'
 import { CustomSelect } from './CustomSelect'
 
 const SCHEDULE_PRESETS = [
@@ -172,13 +173,9 @@ export function FlowsPanel() {
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
             Automated Flows ({flows.length})
           </h3>
-          <button
-            onClick={() => { resetForm(); setShowCreateModal(true) }}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            <Plus size={14} />
+          <Button onClick={() => { resetForm(); setShowCreateModal(true) }} leftSection={<Plus size={14} />}>
             Create Flow
-          </button>
+          </Button>
         </div>
 
         {flows.length === 0 ? (
@@ -215,46 +212,36 @@ export function FlowsPanel() {
 
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     {/* Toggle enable/disable */}
-                    <button
-                      onClick={e => { e.stopPropagation(); handleToggle(f) }}
+                    <Switch
+                      checked={f.enabled}
+                      onChange={(e) => { e.stopPropagation(); handleToggle(f) }}
                       disabled={togglingFlow === f.name}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        f.enabled ? 'bg-emerald-600' : 'bg-gray-600'
-                      } ${togglingFlow === f.name ? 'opacity-50' : ''}`}
+                      size="sm"
+                      aria-label={f.enabled ? 'Disable flow' : 'Enable flow'}
                       title={f.enabled ? 'Disable flow' : 'Enable flow'}
-                    >
-                      {togglingFlow === f.name ? (
-                        <Loader2 size={12} className="absolute left-1/2 -translate-x-1/2 animate-spin text-white" />
-                      ) : (
-                        <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                          f.enabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
-                        }`} />
-                      )}
-                    </button>
+                      onClick={(e) => e.stopPropagation()}
+                    />
 
                     {/* Run Now */}
-                    <button
-                      onClick={e => { e.stopPropagation(); handleRun(f) }}
+                    <Button
+                      size="xs"
+                      onClick={(e) => { e.stopPropagation(); handleRun(f) }}
                       disabled={runningFlow === f.name}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition-colors"
+                      leftSection={runningFlow === f.name ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
                       title="Run flow now"
                     >
-                      {runningFlow === f.name ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <Play size={12} />
-                      )}
                       {runningFlow === f.name ? 'Running...' : 'Run Now'}
-                    </button>
+                    </Button>
 
                     {/* Delete */}
-                    <button
-                      onClick={e => { e.stopPropagation(); setPendingDelete(f) }}
-                      className="p-1.5 text-gray-500 hover:text-red-400 transition-colors rounded"
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(f) }}
                       title="Delete flow"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </ActionIcon>
 
                     {/* Expand chevron */}
                     {expanded === f.name ? (
@@ -294,146 +281,123 @@ export function FlowsPanel() {
         )}
       </div>
 
-      {/* Create Flow Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
-          <div className="relative bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Modal header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-700/50">
-              <div>
-                <h3 className="text-base font-semibold text-gray-200">Create Flow</h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Schedule an agent to run automatically on a recurring basis.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-700/50"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal body */}
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="my-daily-review"
-                  className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:border-emerald-500 focus:outline-none"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Schedule</label>
-                <CustomSelect
-                  value={scheduleMode === 'custom' ? CUSTOM_CRON_VALUE : schedule}
-                  onChange={val => {
-                    if (val === CUSTOM_CRON_VALUE) {
-                      setScheduleMode('custom')
-                      setSchedule('')
-                    } else {
-                      setScheduleMode('preset')
-                      setSchedule(val)
-                    }
-                  }}
-                  placeholder="Pick a schedule..."
-                  options={scheduleSelectOptions}
-                />
-                {scheduleMode === 'custom' && (
-                  <input
-                    type="text"
-                    value={schedule}
-                    onChange={e => setSchedule(e.target.value)}
-                    placeholder="*/30 * * * *"
-                    className="w-full mt-2 bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 font-mono focus:border-emerald-500 focus:outline-none"
-                    autoFocus
-                  />
-                )}
-                {schedule && (
-                  <p className="text-[11px] text-emerald-500/70 mt-1.5">
-                    {cronToLabel(schedule)}{scheduleMode === 'custom' && schedule ? ` — ${schedule}` : ''}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">Agent Profile</label>
-                  {profiles.length > 0 ? (
-                    <CustomSelect
-                      value={agentProfile}
-                      onChange={setAgentProfile}
-                      placeholder="Select a profile..."
-                      options={profiles.map(p => ({
-                        value: p.name,
-                        label: p.name,
-                        sublabel: p.description || undefined,
-                      }))}
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={agentProfile}
-                      onChange={e => setAgentProfile(e.target.value)}
-                      placeholder="e.g. developer"
-                      className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:border-emerald-500 focus:outline-none"
-                    />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">Provider</label>
-                  <CustomSelect
-                    value={provider}
-                    onChange={setProvider}
-                    placeholder="Default"
-                    options={providers.map(p => ({
-                      value: p.name,
-                      label: p.name.replace(/_/g, ' '),
-                      sublabel: !p.installed ? 'Not installed' : undefined,
-                      disabled: !p.installed,
-                    }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Prompt</label>
-                <textarea
-                  value={promptTemplate}
-                  onChange={e => setPromptTemplate(e.target.value)}
-                  placeholder="Describe what this flow should do..."
-                  rows={5}
-                  className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 font-mono focus:border-emerald-500 focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-
-            {/* Modal footer */}
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-700/50">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={!name.trim() || !schedule.trim() || !agentProfile.trim() || !promptTemplate.trim() || creating}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
-              >
-                {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                {creating ? 'Creating...' : 'Create Flow'}
-              </button>
+      <Modal
+        opened={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title={
+          <div>
+            <div className="text-base font-semibold text-gray-200">Create Flow</div>
+            <div className="text-xs text-gray-500 mt-1">
+              Schedule an agent to run automatically on a recurring basis.
             </div>
           </div>
+        }
+        size="lg"
+        radius="lg"
+      >
+        <div className="space-y-4">
+          <TextInput
+            label="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="my-daily-review"
+            autoFocus
+          />
+
+          <div>
+            <CustomSelect
+              value={scheduleMode === 'custom' ? CUSTOM_CRON_VALUE : schedule}
+              onChange={(val) => {
+                if (val === CUSTOM_CRON_VALUE) {
+                  setScheduleMode('custom')
+                  setSchedule('')
+                } else {
+                  setScheduleMode('preset')
+                  setSchedule(val)
+                }
+              }}
+              placeholder="Pick a schedule..."
+              options={scheduleSelectOptions}
+            />
+            {scheduleMode === 'custom' && (
+              <TextInput
+                className="mt-2"
+                value={schedule}
+                onChange={(e) => setSchedule(e.target.value)}
+                placeholder="*/30 * * * *"
+                styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
+                autoFocus
+              />
+            )}
+            {schedule && (
+              <p className="text-[11px] text-emerald-500/70 mt-1.5">
+                {cronToLabel(schedule)}{scheduleMode === 'custom' && schedule ? ` — ${schedule}` : ''}
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1">
+              {profiles.length > 0 ? (
+                <CustomSelect
+                  label="Agent Profile"
+                  value={agentProfile}
+                  onChange={setAgentProfile}
+                  placeholder="Select a profile..."
+                  options={profiles.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                    sublabel: p.description || undefined,
+                  }))}
+                />
+              ) : (
+                <TextInput
+                  label="Agent Profile"
+                  value={agentProfile}
+                  onChange={(e) => setAgentProfile(e.target.value)}
+                  placeholder="e.g. developer"
+                />
+              )}
+            </div>
+            <div className="flex-1">
+              <CustomSelect
+                label="Provider"
+                value={provider}
+                onChange={setProvider}
+                placeholder="Default"
+                options={providers.map((p) => ({
+                  value: p.name,
+                  label: p.name.replace(/_/g, ' '),
+                  sublabel: !p.installed ? 'Not installed' : undefined,
+                  disabled: !p.installed,
+                }))}
+              />
+            </div>
+          </div>
+
+          <Textarea
+            label="Prompt"
+            value={promptTemplate}
+            onChange={(e) => setPromptTemplate(e.target.value)}
+            placeholder="Describe what this flow should do..."
+            rows={5}
+            styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
+          />
         </div>
-      )}
+
+        <Group justify="flex-end" gap="sm" mt="lg">
+          <Button variant="default" onClick={() => setShowCreateModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreate}
+            disabled={!name.trim() || !schedule.trim() || !agentProfile.trim() || !promptTemplate.trim() || creating}
+            leftSection={creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          >
+            {creating ? 'Creating...' : 'Create Flow'}
+          </Button>
+        </Group>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

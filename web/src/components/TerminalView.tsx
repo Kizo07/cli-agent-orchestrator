@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { X, Terminal as TermIcon } from 'lucide-react'
+import { ActionIcon, Badge } from '@mantine/core'
 import { wsAuthQuery } from '../api'
 
 interface TerminalViewProps {
@@ -140,18 +141,14 @@ export function TerminalView({ terminalId, provider, agentProfile, onClose, focu
         <div className="flex items-center gap-3">
           <TermIcon size={16} className="text-emerald-400" />
           <span className="text-sm font-mono text-gray-300">{terminalId}</span>
-          {provider && <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">{provider}</span>}
-          {agentProfile && <span className="text-xs text-emerald-400 bg-emerald-900/30 px-2 py-0.5 rounded">{agentProfile}</span>}
+          {provider && <Badge variant="light" color="neutral" size="xs">{provider}</Badge>}
+          {agentProfile && <Badge variant="light" color="success" size="xs">{agentProfile}</Badge>}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[10px] text-gray-600">Click X to close</span>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-500 hover:text-white transition-colors rounded"
-            title="Close terminal"
-          >
+          <ActionIcon variant="subtle" color="gray" onClick={onClose} title="Close terminal">
             <X size={18} />
-          </button>
+          </ActionIcon>
         </div>
       </div>
       {/* Terminal — absolute positioning gives xterm.js real pixel dimensions to measure */}

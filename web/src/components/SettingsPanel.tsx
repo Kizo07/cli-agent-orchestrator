@@ -2,35 +2,7 @@ import { useState, useEffect } from 'react'
 import { api, AgentDirsSettings } from '../api'
 import { useStore } from '../store'
 import { FolderOpen, Plus, X, RefreshCw } from 'lucide-react'
-
-/** A small on/off switch (GH #280). */
-function Toggle({ on, onClick, disabled, label }: {
-  on: boolean
-  onClick: () => void
-  disabled?: boolean
-  label: string
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      onClick={onClick}
-      disabled={disabled}
-      title={on ? 'Enabled — click to skip this directory' : 'Disabled — click to scan this directory'}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
-        on ? 'bg-emerald-600' : 'bg-gray-600'
-      }`}
-    >
-      <span
-        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-          on ? 'translate-x-[18px]' : 'translate-x-1'
-        }`}
-      />
-    </button>
-  )
-}
+import { ActionIcon, Button, Group, Switch, TextInput } from '@mantine/core'
 
 export function SettingsPanel() {
   const [settings, setSettings] = useState<AgentDirsSettings | null>(null)
@@ -135,17 +107,24 @@ export function SettingsPanel() {
         {isDefault && (
           <span className="text-[10px] uppercase tracking-wide text-gray-500 shrink-0">default</span>
         )}
-        <Toggle on={!off} onClick={() => toggle(dir)} disabled={busy} label={`Enable ${dir}`} />
+        <Switch
+          checked={!off}
+          onChange={() => toggle(dir)}
+          disabled={busy}
+          aria-label={`Enable ${dir}`}
+          title={off ? 'Disabled — click to scan this directory' : 'Enabled — click to skip this directory'}
+        />
         {!isDefault && (
-          <button
+          <ActionIcon
+            variant="subtle"
+            color="gray"
             onClick={() => removeDir(dir)}
             disabled={busy}
-            className="text-gray-500 hover:text-red-400 transition-colors shrink-0 disabled:opacity-40"
             title="Remove directory"
             aria-label={`Remove ${dir}`}
           >
             <X size={14} />
-          </button>
+          </ActionIcon>
         )}
       </div>
     )
@@ -188,23 +167,20 @@ export function SettingsPanel() {
           </div>
         )}
 
-        <div className="flex gap-2">
-          <input
-            type="text"
+        <Group gap="xs" wrap="nowrap">
+          <TextInput
             value={newDir}
-            onChange={e => setNewDir(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addDir()}
+            onChange={(e) => setNewDir(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addDir()}
             placeholder="/path/to/agent-profiles"
-            className="flex-1 bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 font-mono focus:border-emerald-500 focus:outline-none"
+            className="flex-1"
+            styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
+            size="md"
           />
-          <button
-            onClick={addDir}
-            disabled={!newDir.trim() || busy}
-            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-sm px-4 py-2.5 rounded-lg transition-colors"
-          >
-            <Plus size={14} /> Add
-          </button>
-        </div>
+          <Button onClick={addDir} disabled={!newDir.trim() || busy} leftSection={<Plus size={14} />} h={42}>
+            Add
+          </Button>
+        </Group>
 
         {dupCount > 0 && (
           <p className="text-xs text-amber-400/80 mt-4" data-testid="dup-note">
@@ -215,12 +191,13 @@ export function SettingsPanel() {
       </div>
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
+          variant="default"
           onClick={() => { refreshProfiles(); showSnackbar({ type: 'info', message: 'Refreshing profiles...' }) }}
-          className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2.5 rounded-lg transition-colors"
+          leftSection={<RefreshCw size={14} />}
         >
-          <RefreshCw size={14} /> Refresh Profiles
-        </button>
+          Refresh Profiles
+        </Button>
       </div>
     </div>
   )

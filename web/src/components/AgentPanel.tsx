@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../store'
 import { api, AgentProfileInfo, ProviderInfo } from '../api'
-import { Bot, Play, Trash2, ChevronRight, Terminal as TermIcon, Monitor, Package, FolderOpen, Tag, Search, Mail, Plus, LogOut, Send, FileText, X } from 'lucide-react'
+import { Bot, Play, Trash2, ChevronRight, Terminal as TermIcon, Monitor, Package, FolderOpen, Tag, Search, Mail, Plus, LogOut, Send, FileText } from 'lucide-react'
+import { ActionIcon, Button, Group, Modal, TextInput, UnstyledButton } from '@mantine/core'
 import { TerminalView } from './TerminalView'
 import { ConfirmModal } from './ConfirmModal'
 import { InboxPanel } from './InboxPanel'
@@ -247,13 +248,9 @@ export function AgentPanel() {
                 />
               </div>
             )}
-            <button
-              onClick={() => setShowSpawnModal(true)}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-            >
-              <Plus size={14} />
+            <Button onClick={() => setShowSpawnModal(true)} leftSection={<Plus size={14} />}>
               Spawn Agent
-            </button>
+            </Button>
           </div>
         </div>
         <p className="text-xs text-gray-500 mb-4">
@@ -279,22 +276,24 @@ export function AgentPanel() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={e => { e.stopPropagation(); attachSession(s) }}
+                  <Button
+                    size="xs"
+                    variant="light"
+                    onClick={(e) => { e.stopPropagation(); attachSession(s) }}
                     disabled={attaching === s.id}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:text-white bg-emerald-900/30 hover:bg-emerald-600 border border-emerald-700/50 rounded-lg transition-colors disabled:opacity-40"
                     title="Attach to this session's terminal (opens it, or focuses it if already open)"
+                    leftSection={<TermIcon size={12} />}
                   >
-                    <TermIcon size={12} />
                     {attaching === s.id ? 'Attaching…' : 'Attach'}
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); deleteSession(s.id) }}
-                    className="p-1.5 text-gray-500 hover:text-red-400 transition-colors rounded"
+                  </Button>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={(e) => { e.stopPropagation(); deleteSession(s.id) }}
                     title="Delete session"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </ActionIcon>
                   <ChevronRight size={14} className={`text-gray-500 transition-transform ${activeSession === s.id ? 'rotate-90' : ''}`} />
                 </div>
               </div>
@@ -310,14 +309,15 @@ export function AgentPanel() {
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
               Terminals in {activeSession}
             </h3>
-            <button
+            <Button
+              size="xs"
+              variant="default"
               onClick={() => setShowAddAgent(!showAddAgent)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-emerald-400 bg-gray-900/50 hover:bg-gray-900 border border-gray-700/50 hover:border-emerald-700/50 rounded-lg transition-colors"
               title="Add another agent to this session so they can collaborate"
+              leftSection={<Plus size={14} />}
             >
-              <Plus size={14} />
               Add Agent
-            </button>
+            </Button>
           </div>
 
           {/* Add Agent Inline Form */}
@@ -356,37 +356,31 @@ export function AgentPanel() {
                       }))}
                     />
                   ) : (
-                    <input
-                      type="text"
+                    <TextInput
                       value={addProfile}
-                      onChange={e => setAddProfile(e.target.value)}
+                      onChange={(e) => setAddProfile(e.target.value)}
                       placeholder="e.g. developer, reviewer"
-                      className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:border-emerald-500 focus:outline-none"
                     />
                   )}
                 </div>
-                <button
+                <Button
                   onClick={handleAddAgent}
                   disabled={!addProfile.trim() || addingAgent}
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors"
+                  leftSection={<Plus size={14} />}
                 >
-                  <Plus size={14} />
                   {addingAgent ? 'Adding...' : 'Add'}
-                </button>
+                </Button>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Working Directory</label>
-                <div className="relative">
-                  <FolderOpen size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="text"
-                    value={addWorkDir}
-                    onChange={e => setAddWorkDir(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddAgent()}
-                    placeholder="/path/to/project (optional)"
-                    className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm font-mono rounded-lg pl-9 pr-3 py-2 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
+                <TextInput
+                  value={addWorkDir}
+                  onChange={(e) => setAddWorkDir(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddAgent()}
+                  placeholder="/path/to/project (optional)"
+                  leftSection={<FolderOpen size={14} className="text-gray-500" />}
+                  styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
+                />
               </div>
             </div>
           )}
@@ -403,48 +397,15 @@ export function AgentPanel() {
                     {t.agent_profile && <span className="text-xs text-emerald-400">{t.agent_profile}</span>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setInboxTerminalId(t.id)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-colors"
-                      title="View inbox"
-                    >
-                      <Mail size={14} />
-                      Inbox
-                    </button>
-                    <button
-                      onClick={() => openTerminal(t.id, t.provider, t.agent_profile)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition-colors"
-                      title="Open live terminal"
-                    >
-                      <Monitor size={14} />
-                      Open Terminal
-                    </button>
-                    <button
-                      onClick={() => setOutputTerminalId(t.id)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-colors"
-                      title="View output"
-                    >
-                      <FileText size={14} />
-                      Output
-                    </button>
-                    <button
-                      onClick={() => setPendingExit(t as TerminalMeta)}
-                      disabled={exitingTerminal === t.id}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition-colors"
-                      title="Graceful exit"
-                    >
-                      <LogOut size={14} />
+                    <Button size="xs" variant="default" onClick={() => setInboxTerminalId(t.id)} leftSection={<Mail size={14} />} title="View inbox">Inbox</Button>
+                    <Button size="xs" onClick={() => openTerminal(t.id, t.provider, t.agent_profile)} leftSection={<Monitor size={14} />} title="Open live terminal">Open Terminal</Button>
+                    <Button size="xs" variant="default" onClick={() => setOutputTerminalId(t.id)} leftSection={<FileText size={14} />} title="View output">Output</Button>
+                    <Button size="xs" color="warning" onClick={() => setPendingExit(t as TerminalMeta)} disabled={exitingTerminal === t.id} leftSection={<LogOut size={14} />} title="Graceful exit">
                       {exitingTerminal === t.id ? 'Exiting...' : 'Graceful Exit'}
-                    </button>
-                    <button
-                      onClick={() => setPendingClose(t as TerminalMeta)}
-                      disabled={closingTerminal === t.id}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition-colors"
-                      title="Close terminal"
-                    >
-                      <Trash2 size={14} />
+                    </Button>
+                    <Button size="xs" color="danger" onClick={() => setPendingClose(t as TerminalMeta)} disabled={closingTerminal === t.id} leftSection={<Trash2 size={14} />} title="Close terminal">
                       {closingTerminal === t.id ? 'Closing...' : 'Close'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {/* Working Directory Display */}
@@ -463,25 +424,25 @@ export function AgentPanel() {
                     Message agent...
                   </button>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
+                  <Group gap="xs" wrap="nowrap">
+                    <TextInput
+                      className="flex-1"
+                      size="xs"
                       value={sendInputValues[t.id] || ''}
-                      onChange={e => setSendInputValues(prev => ({ ...prev, [t.id]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSendInput(t.id) }}
+                      onChange={(e) => setSendInputValues(prev => ({ ...prev, [t.id]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendInput(t.id) }}
                       placeholder="Type a message..."
-                      className="flex-1 bg-gray-900 border border-gray-700 text-gray-200 text-sm font-mono rounded-lg px-3 py-1.5 focus:border-emerald-500 focus:outline-none"
                       autoFocus
                     />
-                    <button
+                    <Button
+                      size="xs"
                       onClick={() => handleSendInput(t.id)}
                       disabled={sendingInput === t.id || !(sendInputValues[t.id] || '').trim()}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-medium rounded-lg transition-colors"
+                      leftSection={<Send size={12} />}
                     >
-                      <Send size={12} />
                       {sendingInput === t.id ? 'Sending...' : 'Send'}
-                    </button>
-                  </div>
+                    </Button>
+                  </Group>
                 )}
               </div>
             ))}
@@ -549,145 +510,119 @@ export function AgentPanel() {
         onCancel={() => setPendingExit(null)}
       />
 
-      {/* Spawn Agent Modal */}
-      {showSpawnModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSpawnModal(false)} />
-          <div className="relative bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Modal header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-700/50">
-              <div>
-                <h3 className="text-base font-semibold text-gray-200">Spawn Agent</h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Launch a new AI agent in its own isolated tmux session.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowSpawnModal(false)}
-                className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-700/50"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal body */}
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Provider</label>
-                <CustomSelect
-                  value={provider}
-                  onChange={setProvider}
-                  placeholder="Select provider..."
-                  options={(providers.length > 0 ? providers : FALLBACK_PROVIDERS.map(n => ({ name: n, binary: '', installed: true }))).map(p => ({
-                    value: p.name,
-                    label: p.name.replace(/_/g, ' '),
-                    sublabel: !p.installed ? 'Not installed' : undefined,
-                    disabled: !p.installed,
-                  }))}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Agent Profile</label>
-                {loadingProfiles ? (
-                  <div className="bg-gray-900 border border-gray-700 text-gray-500 text-sm rounded-lg px-3 py-2.5">Loading profiles...</div>
-                ) : profiles.length > 0 ? (
-                  <CustomSelect
-                    value={profile}
-                    onChange={setProfile}
-                    placeholder="Select a profile..."
-                    options={profiles.map(p => ({
-                      value: p.name,
-                      label: p.name,
-                      sublabel: p.description || undefined,
-                      group: SOURCE_LABELS[p.source] || p.source,
-                    }))}
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    value={profile}
-                    onChange={e => setProfile(e.target.value)}
-                    placeholder="e.g. developer, reviewer"
-                    className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:border-emerald-500 focus:outline-none"
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Session Name <span className="text-gray-600">(optional)</span></label>
-                <div className="relative">
-                  <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="text"
-                    value={sessionName}
-                    onChange={e => setSessionName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                    placeholder="my-session (or a random id like cao-a1b2c3d4)"
-                    className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Working Directory <span className="text-gray-600">(optional)</span></label>
-                <div className="relative">
-                  <FolderOpen size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="text"
-                    value={workingDirectory}
-                    onChange={e => setWorkingDirectory(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                    placeholder="/path/to/project (defaults to home)"
-                    className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm font-mono rounded-lg pl-9 pr-3 py-2.5 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Quick-pick profiles */}
-              {profiles.length > 0 && (
-                <div>
-                  <label className="block text-xs text-gray-500 mb-2">Quick pick</label>
-                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
-                    {profiles.slice(0, 12).map(p => (
-                      <button
-                        key={`${p.source}-${p.name}`}
-                        onClick={() => setProfile(p.name)}
-                        className={`text-left px-2.5 py-2 rounded-lg border text-xs transition-all ${
-                          profile === p.name
-                            ? 'bg-emerald-900/30 border-emerald-700/50 text-emerald-300'
-                            : 'bg-gray-900/50 border-gray-700/30 hover:bg-gray-800/80 text-gray-300'
-                        }`}
-                      >
-                        <span className="font-medium">{p.name}</span>
-                        <span className="text-[10px] text-gray-600 ml-1.5">{SOURCE_LABELS[p.source] || p.source}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal footer */}
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-700/50">
-              <button
-                onClick={() => setShowSpawnModal(false)}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={!profile.trim() || creating}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
-              >
-                <Play size={14} />
-                {creating ? 'Spawning...' : 'Spawn Agent'}
-              </button>
+      <Modal
+        opened={showSpawnModal}
+        onClose={() => setShowSpawnModal(false)}
+        title={
+          <div>
+            <div className="text-base font-semibold text-gray-200">Spawn Agent</div>
+            <div className="text-xs text-gray-500 mt-1">
+              Launch a new AI agent in its own isolated tmux session.
             </div>
           </div>
+        }
+        size="lg"
+        radius="lg"
+      >
+        <div className="space-y-4">
+          <CustomSelect
+            label="Provider"
+            value={provider}
+            onChange={setProvider}
+            placeholder="Select provider..."
+            options={(providers.length > 0 ? providers : FALLBACK_PROVIDERS.map(n => ({ name: n, binary: '', installed: true }))).map(p => ({
+              value: p.name,
+              label: p.name.replace(/_/g, ' '),
+              sublabel: !p.installed ? 'Not installed' : undefined,
+              disabled: !p.installed,
+            }))}
+          />
+
+          {loadingProfiles ? (
+            <TextInput label="Agent Profile" value="Loading profiles..." disabled className="w-full" />
+          ) : profiles.length > 0 ? (
+            <CustomSelect
+              label="Agent Profile"
+              value={profile}
+              onChange={setProfile}
+              placeholder="Select a profile..."
+              options={profiles.map(p => ({
+                value: p.name,
+                label: p.name,
+                sublabel: p.description || undefined,
+                group: SOURCE_LABELS[p.source] || p.source,
+              }))}
+            />
+          ) : (
+            <TextInput
+              label="Agent Profile"
+              value={profile}
+              onChange={(e) => setProfile(e.target.value)}
+              placeholder="e.g. developer, reviewer"
+            />
+          )}
+
+          <TextInput
+            label={
+              <span>Session Name <span className="text-gray-600">(optional)</span></span>
+            }
+            value={sessionName}
+            onChange={(e) => setSessionName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            placeholder="my-session (or a random id like cao-a1b2c3d4)"
+            leftSection={<Tag size={14} className="text-gray-500" />}
+          />
+
+          <TextInput
+            label={
+              <span>Working Directory <span className="text-gray-600">(optional)</span></span>
+            }
+            value={workingDirectory}
+            onChange={(e) => setWorkingDirectory(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            placeholder="/path/to/project (defaults to home)"
+            leftSection={<FolderOpen size={14} className="text-gray-500" />}
+            styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
+          />
+
+          {/* Quick-pick profiles */}
+          {profiles.length > 0 && (
+            <div>
+              <div className="mb-2 text-xs text-gray-500">Quick pick</div>
+              <div className="grid max-h-40 grid-cols-2 gap-1.5 overflow-y-auto">
+                {profiles.slice(0, 12).map(p => (
+                  <button
+                    key={`${p.source}-${p.name}`}
+                    onClick={() => setProfile(p.name)}
+                    className={`text-left px-2.5 py-2 rounded-lg border text-xs transition-all ${
+                      profile === p.name
+                        ? 'bg-emerald-900/30 border-emerald-700/50 text-emerald-300'
+                        : 'bg-gray-900/50 border-gray-700/30 hover:bg-gray-800/80 text-gray-300'
+                    }`}
+                  >
+                    <span className="font-medium">{p.name}</span>
+                    <span className="text-[10px] text-gray-600 ml-1.5">{SOURCE_LABELS[p.source] || p.source}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+
+        <Group justify="flex-end" gap="sm" mt="lg">
+          <Button variant="default" onClick={() => setShowSpawnModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreate}
+            disabled={!profile.trim() || creating}
+            leftSection={<Play size={14} />}
+          >
+            {creating ? 'Spawning...' : 'Spawn Agent'}
+          </Button>
+        </Group>
+      </Modal>
+
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../api'
-import { X, RefreshCw, Copy, Check, FileText, Loader2 } from 'lucide-react'
+import { RefreshCw, Copy, Check, FileText } from 'lucide-react'
+import { ActionIcon, Badge, Box, Group, Loader, Modal, SegmentedControl } from '@mantine/core'
 
 function stripAnsi(text: string): string {
   return text.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b\][^\x07]*\x07/g, '')
@@ -40,15 +41,6 @@ export function OutputViewer({ terminalId, onClose }: OutputViewerProps) {
     }
   }, [output, mode])
 
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const handleCopy = async () => {
     const clean = stripAnsi(output)
     try {
@@ -67,95 +59,73 @@ export function OutputViewer({ terminalId, onClose }: OutputViewerProps) {
   const cleanOutput = stripAnsi(output)
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl w-full max-w-[800px] mx-4 overflow-hidden animate-in fade-in zoom-in-95 flex flex-col" style={{ maxHeight: '80vh' }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700/30 shrink-0">
-          <div className="flex items-center gap-3">
-            <FileText size={16} className="text-emerald-400" />
-            <span className="text-sm font-semibold text-white">Terminal Output</span>
-            <span className="text-xs text-gray-500 font-mono bg-gray-800 px-2 py-0.5 rounded">{terminalId}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Copy button */}
-            <button
-              onClick={handleCopy}
-              disabled={!cleanOutput}
-              className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30 transition-colors rounded"
-              title="Copy to clipboard"
-            >
-              {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
-            </button>
-            {copied && <span className="text-xs text-emerald-400">Copied!</span>}
-            {/* Refresh button */}
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30 transition-colors rounded"
-              title="Refresh output"
-            >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            </button>
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="p-1.5 text-gray-500 hover:text-white transition-colors rounded"
-              title="Close"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Toggle */}
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-700/30 shrink-0">
-          <button
-            onClick={() => setMode('last')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-              mode === 'last'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-            }`}
+    <Modal
+      opened
+      onClose={onClose}
+      centered
+      size="800px"
+      radius="lg"
+      title={
+        <Group gap="sm" wrap="nowrap">
+          <FileText size={16} className="text-emerald-400" />
+          <span className="text-sm font-semibold text-white">Terminal Output</span>
+          <Badge variant="light" color="gray" className="font-mono">{terminalId}</Badge>
+        </Group>
+      }
+      closeButtonProps={{ 'aria-label': 'Close' }}
+    >
+      <Group justify="space-between" mx="md" mb="sm" wrap="nowrap">
+        <Group gap="xs" wrap="nowrap">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={handleCopy}
+            disabled={!cleanOutput}
+            title="Copy to clipboard"
           >
-            Last Response
-          </button>
-          <button
-            onClick={() => setMode('full')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-              mode === 'full'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-            }`}
+            {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+          </ActionIcon>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={handleRefresh}
+            disabled={loading}
+            title="Refresh output"
           >
-            Full Output
-          </button>
-        </div>
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </ActionIcon>
+          {copied && <span className="text-xs text-emerald-400">Copied!</span>}
+        </Group>
+        <SegmentedControl
+          value={mode}
+          onChange={(value) => setMode(value as 'last' | 'full')}
+          data={[
+            { value: 'last', label: 'Last Response' },
+            { value: 'full', label: 'Full Output' },
+          ]}
+          size="xs"
+        />
+      </Group>
 
-        {/* Output Area */}
-        <div className="flex-1 overflow-hidden px-4 py-3" style={{ minHeight: 0 }}>
-          {loading ? (
-            <div className="flex items-center justify-center h-full min-h-[200px]">
-              <Loader2 size={24} className="animate-spin text-gray-500" />
-            </div>
-          ) : cleanOutput ? (
-            <pre
-              ref={outputRef}
-              className="bg-gray-950 rounded-lg p-4 font-mono text-sm text-gray-300 overflow-y-auto whitespace-pre-wrap break-words"
-              style={{ maxHeight: 'calc(80vh - 160px)' }}
-            >
-              {cleanOutput}
-            </pre>
-          ) : (
-            <div className="flex items-center justify-center h-full min-h-[200px]">
-              <p className="text-gray-500 text-sm">No output available</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+      <Box className="mx-3 px-2" style={{ minHeight: 0 }}>
+        {loading ? (
+          <Box className="flex min-h-[200px] items-center justify-center">
+            <Loader color="gray" size="sm" />
+          </Box>
+        ) : cleanOutput ? (
+          <pre
+            ref={outputRef}
+            className="overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-gray-950 p-4 font-mono text-sm text-gray-300"
+            style={{ maxHeight: 'calc(80vh - 160px)' }}
+          >
+            {cleanOutput}
+          </pre>
+        ) : (
+          <Box className="flex min-h-[200px] items-center justify-center">
+            <p className="text-sm text-gray-500">No output available</p>
+          </Box>
+        )}
+      </Box>
+    </Modal>
   )
 }

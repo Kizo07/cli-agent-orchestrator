@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useStore } from '../store'
 import { api, TerminalMeta } from '../api'
 import { Bot, Zap, Package, Monitor, Terminal as TermIcon, Trash2, Mail, FileText, LogOut, Send, ChevronRight, ChevronDown, Users, Filter, ArrowDownUp } from 'lucide-react'
+import { ActionIcon, Button, Group, TextInput } from '@mantine/core'
 import { TerminalView } from './TerminalView'
 import { ConfirmModal } from './ConfirmModal'
 import { InboxPanel } from './InboxPanel'
@@ -278,12 +279,12 @@ export function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => voi
 
       {/* Quick Actions */}
       <div className="flex gap-3 flex-wrap">
-        <button onClick={() => onNavigate('agents')} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">
-          <Bot size={16} /> Spawn Agent
-        </button>
-        <button onClick={() => onNavigate('flows')} className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors">
-          <Zap size={16} /> Manage Flows
-        </button>
+        <Button onClick={() => onNavigate('agents')} leftSection={<Bot size={16} />}>
+          Spawn Agent
+        </Button>
+        <Button variant="default" onClick={() => onNavigate('flows')} leftSection={<Zap size={16} />}>
+          Manage Flows
+        </Button>
       </div>
 
       {/* Header with sort toggle */}
@@ -295,10 +296,9 @@ export function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => voi
               Each session is a workspace where one or more AI agents run and collaborate.
             </p>
           </div>
-          <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
-            <ArrowDownUp size={12} />
+          <Button variant="default" size="xs" onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')} leftSection={<ArrowDownUp size={12} />}>
             {sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -381,13 +381,15 @@ export function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => voi
             return (
               <div key={session.name} className="bg-gray-800/60 border border-gray-700/50 rounded-xl overflow-hidden relative">
                 {/* Delete session button */}
-                <button
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
                   onClick={(e) => { e.stopPropagation(); setPendingDeleteSession(session.name) }}
-                  className="absolute top-3 right-3 p-1.5 text-gray-600 hover:text-red-400 bg-gray-800/80 hover:bg-gray-700 rounded-lg transition-colors z-10"
+                  className="absolute top-3 right-3 z-10 bg-gray-800/80"
                   title="Delete session"
                 >
                   <Trash2 size={12} />
-                </button>
+                </ActionIcon>
 
                 {/* Session header */}
                 <button onClick={() => toggleSession(session.name)} className="w-full text-left p-4 pr-12 hover:bg-gray-800/40 transition-colors">
@@ -437,11 +439,11 @@ export function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => voi
                                     <span className="text-[10px] text-gray-600">{t.provider}</span>
                                   </div>
                                   <div className="flex items-center gap-1 shrink-0">
-                                    <button onClick={() => setInboxTerminalId(t.id)} className="p-1 text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 rounded transition-colors" title="Inbox"><Mail size={12} /></button>
-                                    <button onClick={() => setOutputTerminalId(t.id)} className="p-1 text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 rounded transition-colors" title="Output"><FileText size={12} /></button>
-                                    <button onClick={() => setLiveTerminal({ id: t.id, provider: t.provider, agentProfile: t.agent_profile })} className="flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-medium rounded transition-colors"><Monitor size={12} />Terminal</button>
-                                    <button onClick={() => setPendingExit(t)} disabled={exitingTerminal === t.id} className="p-1 text-gray-500 hover:text-amber-400 bg-gray-800 hover:bg-gray-700 rounded transition-colors" title="Graceful Exit"><LogOut size={12} /></button>
-                                    <button onClick={() => setPendingClose(t)} disabled={closingTerminal === t.id} className="p-1 text-gray-500 hover:text-red-400 bg-gray-800 hover:bg-gray-700 rounded transition-colors" title="Close"><Trash2 size={12} /></button>
+                                    <ActionIcon variant="subtle" color="gray" onClick={() => setInboxTerminalId(t.id)} title="Inbox"><Mail size={12} /></ActionIcon>
+                                    <ActionIcon variant="subtle" color="gray" onClick={() => setOutputTerminalId(t.id)} title="Output"><FileText size={12} /></ActionIcon>
+                                    <Button size="compact-xs" onClick={() => setLiveTerminal({ id: t.id, provider: t.provider, agentProfile: t.agent_profile })} leftSection={<Monitor size={12} />}>Terminal</Button>
+                                    <ActionIcon variant="subtle" color="gray" onClick={() => setPendingExit(t)} disabled={exitingTerminal === t.id} title="Graceful Exit"><LogOut size={12} /></ActionIcon>
+                                    <ActionIcon variant="subtle" color="gray" onClick={() => setPendingClose(t)} disabled={closingTerminal === t.id} title="Close"><Trash2 size={12} /></ActionIcon>
                                   </div>
                                 </div>
                                 {/* Timestamps */}
@@ -453,10 +455,20 @@ export function DashboardHome({ onNavigate }: { onNavigate: (tab: string) => voi
                                 {!sendInputOpen[t.id] ? (
                                   <button onClick={() => setSendInputOpen(prev => ({ ...prev, [t.id]: true }))} className="text-[10px] text-gray-600 hover:text-gray-300 transition-colors">Message agent...</button>
                                 ) : (
-                                  <div className="flex items-center gap-1.5">
-                                    <input type="text" value={sendInputValues[t.id] || ''} onChange={e => setSendInputValues(prev => ({ ...prev, [t.id]: e.target.value }))} onKeyDown={e => { if (e.key === 'Enter') handleSendInput(t.id) }} placeholder="Type a message..." className="flex-1 bg-gray-900 border border-gray-700 text-gray-200 text-[11px] font-mono rounded px-2 py-1 focus:border-emerald-500 focus:outline-none" autoFocus />
-                                    <button onClick={() => handleSendInput(t.id)} disabled={sendingInput === t.id || !(sendInputValues[t.id] || '').trim()} className="flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-[10px] font-medium rounded transition-colors"><Send size={10} /></button>
-                                  </div>
+                                  <Group gap={6} wrap="nowrap">
+                                    <TextInput
+                                      size="xs"
+                                      className="flex-1"
+                                      value={sendInputValues[t.id] || ''}
+                                      onChange={(e) => setSendInputValues(prev => ({ ...prev, [t.id]: e.target.value }))}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendInput(t.id) }}
+                                      placeholder="Type a message..."
+                                      autoFocus
+                                    />
+                                    <Button size="compact-xs" onClick={() => handleSendInput(t.id)} disabled={sendingInput === t.id || !(sendInputValues[t.id] || '').trim()} aria-label="Send" title="Send">
+                                      <Send size={10} />
+                                    </Button>
+                                  </Group>
                                 )}
                               </div>
                             )

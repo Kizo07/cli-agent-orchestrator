@@ -3,6 +3,7 @@ import { api, MemorySummary, MemoryDetail } from '../api'
 import { useStore } from '../store'
 import { ConfirmModal } from './ConfirmModal'
 import { Brain, Search, Trash2, ChevronDown, ChevronRight, List, Share2 } from 'lucide-react'
+import { ActionIcon, Badge, Button, TextInput } from '@mantine/core'
 import { CustomSelect } from './CustomSelect'
 import { MemoryGraphView } from './MemoryGraphView'
 
@@ -25,10 +26,10 @@ const TYPE_OPTIONS = [
 ]
 
 const SCOPE_PILL: Record<string, string> = {
-  global: 'bg-blue-900/50 text-blue-400',
-  project: 'bg-emerald-900/50 text-emerald-400',
-  session: 'bg-yellow-900/50 text-yellow-400',
-  agent: 'bg-purple-900/50 text-purple-400',
+  global: 'info',
+  project: 'success',
+  session: 'warning',
+  agent: 'accent',
 }
 
 // Keys are unique only within (scope, scope_id), so rows need a composite id
@@ -209,12 +210,13 @@ export function MemoryPanel() {
         {/* Graph + project needs a concrete scope_id (defaulted from the listed
             memories when discoverable). Only shown where it applies. */}
         {viewMode === 'graph' && scopeFilter === 'project' && (
-          <input
-            type="text"
+          <TextInput
             value={graphScopeId}
-            onChange={e => setGraphScopeId(e.target.value)}
+            onChange={(e) => setGraphScopeId(e.target.value)}
             placeholder="project scope_id (e.g. github-com-…)"
-            className="bg-gray-900 border border-gray-700 text-gray-200 text-xs rounded-lg px-3 py-2 w-72 focus:border-emerald-500 focus:outline-none font-mono"
+            size="xs"
+            w={288}
+            styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
           />
         )}
       </div>
@@ -230,15 +232,15 @@ export function MemoryPanel() {
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
             Memories ({filtered.length})
           </h3>
-          <button
+          <Button
+            color="danger"
             onClick={() => setPendingClear(scopeFilter)}
             disabled={!scopeFilter}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             title={scopeFilter ? `Clear all ${scopeFilter} memories` : 'Select a scope filter to enable'}
+            leftSection={<Trash2 size={14} />}
           >
-            <Trash2 size={14} />
             Clear scope…
-          </button>
+          </Button>
         </div>
 
         {/* Filters (list-only: type + key search) */}
@@ -249,16 +251,14 @@ export function MemoryPanel() {
             options={TYPE_OPTIONS}
             className="w-40"
           />
-          <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Filter keys..."
-              className="bg-gray-900 border border-gray-700 text-gray-200 text-xs rounded-lg pl-8 pr-3 py-1.5 w-48 focus:border-emerald-500 focus:outline-none"
-            />
-          </div>
+          <TextInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter keys..."
+            size="xs"
+            w={192}
+            leftSection={<Search size={14} className="text-gray-500" />}
+          />
         </div>
 
         {filtered.length === 0 ? (
@@ -281,9 +281,9 @@ export function MemoryPanel() {
                   <div className="flex items-center gap-3 min-w-0">
                     <Brain size={14} className="text-gray-400 shrink-0" />
                     <span className="text-sm text-gray-200 font-medium truncate">{m.key}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${SCOPE_PILL[m.scope] || 'bg-gray-700 text-gray-400'}`}>
+                    <Badge color={SCOPE_PILL[m.scope] || 'neutral'} variant="light" size="xs" className="shrink-0">
                       {m.scope}
-                    </span>
+                    </Badge>
                     <span className="text-xs text-gray-500 shrink-0">{m.memory_type}</span>
                     {m.tags && (
                       <span className="text-xs text-gray-600 truncate">{m.tags}</span>
@@ -295,13 +295,14 @@ export function MemoryPanel() {
 
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     {/* Delete */}
-                    <button
-                      onClick={e => { e.stopPropagation(); setPendingDelete(m) }}
-                      className="p-1.5 text-gray-500 hover:text-red-400 transition-colors rounded"
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(m) }}
                       title="Delete memory"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </ActionIcon>
 
                     {/* Expand chevron */}
                     {expandedKey === rowId(m) ? (

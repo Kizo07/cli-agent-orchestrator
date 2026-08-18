@@ -10,3 +10,32 @@ for (const name of ['WebGLRenderingContext', 'WebGL2RenderingContext']) {
     ;(globalThis as any)[name] = class {}
   }
 }
+
+// MantineProvider resolves the color scheme via matchMedia; jsdom lacks it.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = (query: string): MediaQueryList =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList
+}
+
+// Mantine Select/Floating UI observes element size; jsdom lacks ResizeObserver.
+if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
+  ;(globalThis as any).ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
+// Mantine Select scrolls the selected option into view; jsdom lacks it.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}

@@ -7,7 +7,7 @@
 // pixels.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup } from './renderWithTheme'
 import { useStore } from '../store'
 
 type AnyHandler = (payload: any) => void
@@ -129,14 +129,15 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     vi.restoreAllMocks()
   })
 
-  // The scope CustomSelect renders its selected label ("All scopes") as button
-  // text — but that same string also appears in the graph scope-guard message,
-  // so target the FIRST match (the select trigger, rendered before the guard).
-  function selectGlobalScope() {
-    fireEvent.click(screen.getAllByText('All scopes')[0])
-    // The dropdown option is a <button>; "global" also appears as text in the
-    // guard message, so disambiguate by role.
-    fireEvent.click(screen.getByRole('button', { name: 'global' }))
+  // The scope CustomSelect (Mantine Select) renders its selected label ("All scopes")
+  // in a read-only combobox input; open the dropdown and choose a scope by option role.
+  async function selectScope(scopeName: string) {
+    fireEvent.click(screen.getAllByRole('combobox')[0])
+    fireEvent.click(await screen.findByRole('option', { name: scopeName }))
+  }
+
+  async function selectGlobalScope() {
+    return selectScope('global')
   }
 
   // Route mock responses by URL + method so a component that fires list + graph
@@ -193,7 +194,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
 
     await waitFor(() => expect(getLastSigma()).toBeDefined())
     expect(graphUrl).toBe('/graph/memory?scope=global')
@@ -219,7 +220,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
 
     expect(await screen.findByText(/Memory lint enrichment is disabled/i)).toBeInTheDocument()
     await waitFor(() => expect(getLastSigma()).toBeDefined())
@@ -242,7 +243,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
     await waitFor(() => expect(getLastSigma()).toBeDefined())
 
     getLastSigma()!.emit('clickNode', { node: 'hub1' })
@@ -269,7 +270,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
     await waitFor(() => expect(getLastSigma()).toBeDefined())
 
     fireEvent.click(screen.getByText('Export to Obsidian'))
@@ -292,7 +293,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
     await waitFor(() => expect(getLastSigma()).toBeDefined())
 
     const sigma = getLastSigma()!
@@ -353,7 +354,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
     await waitFor(() => expect(getLastSigma()).toBeDefined())
 
     // downNode + upNode with NO moveBody in between = a click, not a drag.
@@ -381,8 +382,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     await screen.findByText('project-conventions')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
     // Pick the project scope; the panel defaults graphScopeId from MEMORIES.
-    fireEvent.click(screen.getAllByText('All scopes')[0])
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
+    await selectScope('project')
 
     await waitFor(() => expect(getLastSigma()).toBeDefined())
     // project → scope_id IS carried on the request.
@@ -403,15 +403,13 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
 
     // First select project so a scope_id ('my-proj') lands in shared state.
-    fireEvent.click(screen.getAllByText('All scopes')[0])
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
+    await selectScope('project')
     await waitFor(() => expect(graphUrls.some(u => u.includes('scope=project'))).toBe(true))
     expect(graphUrls.some(u => u === '/graph/memory?scope=project&scope_id=my-proj')).toBe(true)
 
     // Now switch to global. graphScopeId ('my-proj') is still in state, but the
     // effectiveScopeId guard must OMIT it — global has no scope_id.
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
-    fireEvent.click(screen.getByRole('button', { name: 'global' }))
+    await selectScope('global')
 
     await waitFor(() => expect(graphUrls.some(u => u.includes('scope=global'))).toBe(true))
     const globalUrls = graphUrls.filter(u => u.includes('scope=global'))
@@ -433,7 +431,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
 
     const errBox = await screen.findByTestId('graph-error')
     expect(errBox.textContent).toMatch(/:9889/)
@@ -454,7 +452,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
 
     const errBox = await screen.findByTestId('graph-error')
     expect(errBox.textContent).toMatch(/timed out/i)
@@ -482,7 +480,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
 
     const errBox = await screen.findByTestId('graph-error')
     expect(errBox.textContent).toMatch(/timed out on the server/i)
@@ -525,13 +523,11 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
 
     // Start the (slow) project fetch.
-    fireEvent.click(screen.getAllByText('All scopes')[0])
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
+    await selectScope('project')
 
     // Switch to global before the project fetch resolves; global resolves first
     // and renders its graph.
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
-    fireEvent.click(screen.getByRole('button', { name: 'global' }))
+    await selectScope('global')
     await waitFor(() => expect(getLastSigma()).toBeDefined())
     const graphAfterGlobal = getLastSigma()!.graph as import('graphology').default
     expect(graphAfterGlobal.hasNode('hub1')).toBe(true)
@@ -585,10 +581,8 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
 
     // Start the (slow, doomed) project fetch, then switch to global before it
     // settles. Global resolves first and renders its graph.
-    fireEvent.click(screen.getAllByText('All scopes')[0])
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
-    fireEvent.click(screen.getByRole('button', { name: 'global' }))
+    await selectScope('project')
+    await selectScope('global')
     await waitFor(() => expect(getLastSigma()).toBeDefined())
     const graphAfterGlobal = getLastSigma()!.graph as import('graphology').default
     expect(graphAfterGlobal.hasNode('hub1')).toBe(true)
@@ -642,10 +636,8 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
 
     // Start project (fetch A, loading=true), then switch to global (fetch B,
     // still pending). Both leave loading=true; the spinner is showing.
-    fireEvent.click(screen.getAllByText('All scopes')[0])
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
-    fireEvent.click(screen.getByRole('button', { name: 'project' }))
-    fireEvent.click(screen.getByRole('button', { name: 'global' }))
+    await selectScope('project')
+    await selectScope('global')
     await waitFor(() => expect(screen.getByTestId('graph-loading')).toBeInTheDocument())
 
     // Settle the STALE project fetch — its finally must NOT clear loading.
@@ -671,7 +663,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     render(<MemoryPanel />)
     await screen.findByText('No memories stored.')
     fireEvent.click(screen.getByRole('tab', { name: /graph/i }))
-    selectGlobalScope()
+    await selectGlobalScope()
     await waitFor(() => expect(getLastSigma()).toBeDefined())
 
     fireEvent.click(screen.getByText('Export to Obsidian'))

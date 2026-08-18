@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from './renderWithTheme'
 import { SettingsPanel } from '../components/SettingsPanel'
 
 const AGENT_STORE = '/home/u/.aws/cli-agent-orchestrator/agent-store'
@@ -62,17 +62,14 @@ describe('SettingsPanel — directory enable/disable (GH #280/#281)', () => {
     await screen.findByText('/team/a')
 
     const toggle = screen.getByRole('switch', { name: 'Enable /team/a' })
-    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(toggle).toBeChecked()
     fireEvent.click(toggle)
 
     await waitFor(() =>
       expect(posts.some(p => p.disabled_dirs?.includes('/team/a'))).toBe(true)
     )
     await waitFor(() =>
-      expect(screen.getByRole('switch', { name: 'Enable /team/a' })).toHaveAttribute(
-        'aria-checked',
-        'false'
-      )
+      expect(screen.getByRole('switch', { name: 'Enable /team/a' })).not.toBeChecked()
     )
   })
 

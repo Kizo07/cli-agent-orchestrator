@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
 import { AlertTriangle, Loader2, X } from 'lucide-react'
+import { ActionIcon, Box, Button, Group, Modal, Stack, Text } from '@mantine/core'
 
 interface ConfirmModalProps {
   open: boolean
@@ -26,80 +26,62 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
-  const cancelRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (open) cancelRef.current?.focus()
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, onCancel])
-
-  if (!open) return null
-
-  const colors = variant === 'danger'
-    ? { icon: 'text-red-400 bg-red-900/40', btn: 'bg-red-600 hover:bg-red-500 focus:ring-red-500' }
-    : { icon: 'text-yellow-400 bg-yellow-900/40', btn: 'bg-yellow-600 hover:bg-yellow-500 focus:ring-yellow-500' }
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-
-      {/* Modal */}
-      <div className="relative bg-gray-900 border border-gray-700/50 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in-95">
-        {/* Header */}
-        <div className="flex items-start gap-4 p-6 pb-4">
-          <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${colors.icon}`}>
+    <Modal
+      opened={open}
+      onClose={onCancel}
+      title={
+        <Group gap="sm" wrap="nowrap" align="flex-start">
+          <Box
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+              variant === 'danger' ? 'bg-red-900/40 text-red-400' : 'bg-yellow-900/40 text-yellow-400'
+            }`}
+          >
             <AlertTriangle size={20} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-white">{title}</h3>
-            <p className="text-sm text-gray-400 mt-1">{message}</p>
-          </div>
-          <button onClick={onCancel} className="shrink-0 p-1 text-gray-500 hover:text-white rounded transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Details */}
-        {details && details.length > 0 && (
-          <div className="mx-6 mb-4 bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-1.5">
-            {details.map(d => (
-              <div key={d.label} className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">{d.label}</span>
-                <span className="text-gray-300 font-mono">{d.value}</span>
-              </div>
+          </Box>
+          <Box>
+            <Text fw={600}>{title}</Text>
+            <Text size="sm" c="dimmed" mt={4}>
+              {message}
+            </Text>
+          </Box>
+        </Group>
+      }
+      closeButtonProps={{ 'aria-label': 'Close' }}
+      centered
+      size="md"
+      radius="lg"
+    >
+      {details && details.length > 0 && (
+        <Box className="mb-4 rounded-lg border border-gray-700/40 bg-gray-800/60 p-3" mx="md">
+          <Stack gap={6}>
+            {details.map((d) => (
+              <Group key={d.label} justify="space-between" gap="sm" wrap="nowrap">
+                <Text size="xs" c="dimmed">
+                  {d.label}
+                </Text>
+                <Text size="xs" className="font-mono text-gray-300">
+                  {d.value}
+                </Text>
+              </Group>
             ))}
-          </div>
-        )}
+          </Stack>
+        </Box>
+      )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-800/30 border-t border-gray-700/30">
-          <button
-            ref={cancelRef}
-            onClick={onCancel}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-all focus:outline-none focus:ring-2 disabled:opacity-60 flex items-center gap-2 ${colors.btn}`}
-          >
-            {loading && <Loader2 size={14} className="animate-spin" />}
-            {loading ? 'Closing...' : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+      <Group justify="flex-end" gap="sm" mt="md">
+        <Button variant="default" onClick={onCancel} disabled={loading}>
+          {cancelLabel}
+        </Button>
+        <Button
+          color={variant === 'danger' ? 'danger' : 'warning'}
+          onClick={onConfirm}
+          disabled={loading}
+          leftSection={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}
+        >
+          {loading ? 'Closing...' : confirmLabel}
+        </Button>
+      </Group>
+    </Modal>
   )
 }

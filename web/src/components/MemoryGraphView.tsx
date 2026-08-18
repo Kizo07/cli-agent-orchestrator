@@ -8,6 +8,7 @@
 // Visual constants mirror cao_mcp_apps/src/graph/GraphView.tsx exactly.
 
 import { useEffect, useRef, useState } from 'react'
+import { Button } from '@mantine/core'
 import Graph from 'graphology'
 import { circular } from 'graphology-layout'
 import Sigma from 'sigma'
@@ -339,24 +340,23 @@ export function MemoryGraphView({ scope, scopeId }: MemoryGraphViewProps) {
           Knowledge Graph{view ? ` (${view.nodes.length} node${view.nodes.length === 1 ? '' : 's'})` : ''}
         </h3>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="default"
             onClick={fetchGraph}
             disabled={loading}
-            className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-gray-200 text-sm font-medium px-3 py-2 rounded-lg transition-colors"
             title="Rebuild the graph"
+            leftSection={<RefreshCw size={14} className={loading ? 'animate-spin' : ''} />}
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             Refresh
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleExport}
             disabled={!hasGraph || exporting}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
             title={hasGraph ? 'Export this graph to an Obsidian vault' : 'Load a graph first'}
+            leftSection={<Download size={14} />}
           >
-            <Download size={14} />
             {exporting ? 'Exporting…' : 'Export to Obsidian'}
-          </button>
+          </Button>
         </div>
       </div>
       {lintDisabled ? (
@@ -379,7 +379,7 @@ export function MemoryGraphView({ scope, scopeId }: MemoryGraphViewProps) {
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6" data-testid="graph-error">
               <X size={28} className="text-red-500 mb-3" />
               <p className="text-red-400 text-sm">{error}</p>
-              <button onClick={fetchGraph} className="mt-3 text-emerald-400 text-xs hover:underline">Retry</button>
+              <Button variant="subtle" size="xs" onClick={fetchGraph} className="mt-3">Retry</Button>
             </div>
           ) : !hasGraph ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6" data-testid="graph-empty">

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { screen, render } from './renderWithTheme'
 import { StatusBadge } from '../components/StatusBadge'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ConfirmModal } from '../components/ConfirmModal'
@@ -43,7 +43,7 @@ describe('ErrorBoundary', () => {
 
   afterAll(() => consoleSpy.mockRestore())
 
-  function ThrowingComponent(): JSX.Element {
+  function ThrowingComponent(): React.JSX.Element {
     throw new Error('Test error')
   }
 
