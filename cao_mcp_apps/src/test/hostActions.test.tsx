@@ -9,14 +9,9 @@
 //     advertises `openLinks`, and clicking it delegates the bundled Web UI URL
 //     to the host.
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { render } from "./renderWithTheme";
 import { Dashboard } from "../dashboard/Dashboard";
 import { McpApp } from "../shared/mcpApp";
 import type { DashboardSnapshot } from "../shared/types";

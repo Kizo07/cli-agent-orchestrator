@@ -8,6 +8,7 @@
 //   only as escaped React children (XSS safety).
 
 import React, { useState } from "react";
+import { Button, Group, Stack, Text, Textarea } from "@mantine/core";
 import { buildGesturePayload, DRAG_REASSIGN_KIND } from "./mcpApp";
 import type { SubmitCommandKind, SubmitCommandResult } from "./types";
 
@@ -55,7 +56,7 @@ export function TaskControl({
   target,
   scopes,
   confirm,
-}: TaskControlProps): JSX.Element {
+}: TaskControlProps): React.JSX.Element {
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -139,44 +140,51 @@ export function TaskControl({
   }
 
   return (
-    <div
+    <Stack
+      gap={6}
+      mt="md"
       className="cao-taskcontrol"
       data-testid="task-control"
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => void handleDrop(e)}
     >
-      <textarea
-        className="cao-taskcontrol-input"
+      <Textarea
         data-testid="task-input"
         placeholder="Message…"
+        aria-label="Agent message"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={2}
+        resize="vertical"
       />
-      <div className="cao-taskcontrol-buttons">
+      <Group gap={6} wrap="wrap">
         {CONTROLS.filter((c) => canUse(c.requiredScope)).map((def) => (
-          <button
+          <Button
             key={def.kind}
             type="button"
-            className={`cao-btn${def.destructive ? " cao-btn-danger" : ""}`}
+            size="xs"
+            variant={def.destructive ? "light" : "default"}
+            color={def.destructive ? "red" : undefined}
             data-testid={`btn-${def.kind}`}
             data-kind={def.kind}
             disabled={busy}
             onClick={() => void run(def)}
           >
             {def.label}
-          </button>
+          </Button>
         ))}
-      </div>
+      </Group>
       {error && (
-        <p
+        <Text
+          size="sm"
+          c="red"
           className="cao-taskcontrol-error"
           data-testid="task-error"
           role="alert"
         >
           {error}
-        </p>
+        </Text>
       )}
-    </div>
+    </Stack>
   );
 }

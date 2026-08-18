@@ -9,8 +9,9 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { render } from "./renderWithTheme";
 import { Dashboard } from "../dashboard/Dashboard";
 import type { DashboardSnapshot } from "../shared/types";
 

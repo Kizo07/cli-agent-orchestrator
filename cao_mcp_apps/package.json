@@ -32,10 +32,12 @@
     ]
   },
   "dependencies": {
+    "@mantine/core": "9.5.1",
+    "@mantine/hooks": "9.5.1",
     "graphology": "^0.26.0",
     "graphology-layout": "^0.6.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "sigma": "^3.0.3"
   },
   "devDependencies": {
@@ -43,14 +45,16 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.0.1",
     "@types/node": "^22.10.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.9",
     "fast-check": "^3.23.1",
     "happy-dom": "^20.10.6",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "vite": "^8.1.0",

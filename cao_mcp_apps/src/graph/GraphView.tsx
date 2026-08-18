@@ -11,6 +11,7 @@ import Graph from "graphology";
 import { circular } from "graphology-layout";
 import React, { useEffect, useRef, useState } from "react";
 import Sigma from "sigma";
+import { Alert, Box, Button, Group, Skeleton, Text } from "@mantine/core";
 import { HeaderBar } from "../shared/HeaderBar";
 import { McpApp } from "../shared/mcpApp";
 import type { GraphEdgeData, GraphNodeData, GraphViewData } from "./types";
@@ -67,7 +68,7 @@ export function GraphView({
   scope,
   scopeId,
   onOpenTopic,
-}: GraphViewProps): JSX.Element {
+}: GraphViewProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<GraphViewData | null>(
     initialSnapshot ?? null,
   );
@@ -150,39 +151,48 @@ export function GraphView({
   }
 
   return (
-    <div className="cao-root">
+    <Box className="cao-root">
       <HeaderBar title="CAO Graph" />
       {unreachable ? (
-        <div
-          className="cao-taskcontrol-error"
+        <Alert
+          color="danger"
+          variant="light"
           role="alert"
           data-testid="retry-banner"
+          mt="xs"
         >
-          Backplane unreachable.{" "}
-          <button
-            type="button"
-            className="cao-btn"
-            data-testid="retry-button"
-            onClick={retry}
-          >
-            Retry
-          </button>
-        </div>
+          <Group gap="xs" wrap="wrap">
+            <Text size="sm">Backplane unreachable.</Text>
+            <Button
+              type="button"
+              size="xs"
+              variant="light"
+              color="danger"
+              data-testid="retry-button"
+              onClick={retry}
+            >
+              Retry
+            </Button>
+          </Group>
+        </Alert>
       ) : !snapshot ? (
-        <div className="cao-events-empty" data-testid="graph-loading">
-          Loading graph…
-        </div>
+        <Skeleton height={24} width="40%" data-testid="graph-loading" />
       ) : snapshot.nodes.length === 0 ? (
-        <div className="cao-events-empty" data-testid="empty-placeholder">
+        <Text
+          size="sm"
+          c="dimmed"
+          className="cao-events-empty"
+          data-testid="empty-placeholder"
+        >
           No graph data for this provider
-        </div>
+        </Text>
       ) : (
-        <div
+        <Box
           ref={containerRef}
           className="cao-graph-canvas"
           data-testid="graph-canvas"
         />
       )}
-    </div>
+    </Box>
   );
 }

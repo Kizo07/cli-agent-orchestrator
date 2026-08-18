@@ -16,8 +16,9 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { render } from "../test/renderWithTheme";
 import { McpApp } from "../shared/mcpApp";
 import { MockHost, type MockHostOptions } from "../test/mockHost";
 import type { GraphViewData } from "./types";

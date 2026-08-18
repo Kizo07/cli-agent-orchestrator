@@ -5,6 +5,15 @@
 // initial tool result and re-fetches on re-mount.
 
 import React, { useEffect, useRef, useState } from "react";
+import {
+  Badge,
+  Box,
+  Card,
+  Group,
+  ScrollArea,
+  Skeleton,
+  Text,
+} from "@mantine/core";
 import { HeaderBar } from "../shared/HeaderBar";
 import { describeGesture, McpApp } from "../shared/mcpApp";
 import { TaskControl } from "../shared/TaskControl";
@@ -22,7 +31,7 @@ export function AgentView({
   app,
   terminalId,
   initialSnapshot,
-}: AgentViewProps): JSX.Element {
+}: AgentViewProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<AgentDetailSnapshot | null>(
     initialSnapshot ?? null,
   );
@@ -34,8 +43,7 @@ export function AgentView({
 
     app.onToolResult((result) => {
       const snap = (result?.structuredContent ?? result) as
-        | AgentDetailSnapshot
-        | undefined;
+        AgentDetailSnapshot | undefined;
       if (snap && snap.terminal_id) {
         tidRef.current = snap.terminal_id;
         setSnapshot(snap);
@@ -84,37 +92,49 @@ export function AgentView({
 
   if (!snapshot) {
     return (
-      <div className="cao-root">
+      <Box className="cao-root">
         <HeaderBar title="Agent" />
-        <div className="cao-events-empty" data-testid="agent-loading">
-          Loading agent…
-        </div>
-      </div>
+        <Skeleton height={24} width="40%" data-testid="agent-loading" />
+      </Box>
     );
   }
 
   return (
-    <div className="cao-root">
+    <Box className="cao-root">
       <HeaderBar title={snapshot.agent_profile ?? snapshot.terminal_id} />
-      <div className="cao-card" data-testid="agent-detail">
-        <div className="cao-card-head">
-          <span className="cao-card-title">{snapshot.terminal_id}</span>
-          <span
+      <Card padding="sm" withBorder data-testid="agent-detail">
+        <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+          <Text fw={600} size="sm">
+            {snapshot.terminal_id}
+          </Text>
+          <Badge
+            size="xs"
+            variant="light"
             className={`cao-status cao-status-${(snapshot.status ?? "unknown").toLowerCase()}`}
             data-testid="agent-status"
           >
             {snapshot.status ?? "unknown"}
-          </span>
-        </div>
-        <pre className="cao-output" data-testid="agent-output">
-          {snapshot.output_tail}
-        </pre>
-      </div>
+          </Badge>
+        </Group>
+        <ScrollArea.Autosize mah={320} mt="xs" type="auto">
+          <pre
+            className="cao-output"
+            data-testid="agent-output"
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {snapshot.output_tail}
+          </pre>
+        </ScrollArea.Autosize>
+      </Card>
       <TaskControl
         onSubmit={handleSubmit}
         target={snapshot.terminal_id}
         scopes={snapshot.scopes}
       />
-    </div>
+    </Box>
   );
 }

@@ -7,6 +7,7 @@
 // idempotence) because each mount re-registers handlers and re-fetches.
 
 import React, { useEffect, useRef, useState } from "react";
+import { Alert, Box, Button, Group, Text } from "@mantine/core";
 import { AgentStatus } from "../shared/AgentStatus";
 import { HeaderBar } from "../shared/HeaderBar";
 import { describeGesture, McpApp } from "../shared/mcpApp";
@@ -52,7 +53,7 @@ export function Dashboard({
   app,
   initialSnapshot,
   onOpenAgent,
-}: DashboardProps): JSX.Element {
+}: DashboardProps): React.JSX.Element {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot>(
     initialSnapshot ?? EMPTY_SNAPSHOT,
   );
@@ -133,59 +134,71 @@ export function Dashboard({
   void handleSubmit;
 
   return (
-    <div className="cao-root">
+    <Box className="cao-root">
       <HeaderBar
         title="CAO Fleet"
         sessions={snapshot.counts.sessions}
         terminals={snapshot.counts.terminals}
       />
       {canOpenWebUi && (
-        <div className="cao-toolbar" data-testid="webui-toolbar">
-          <button
+        <Group justify="flex-end" gap={8} data-testid="webui-toolbar">
+          <Button
             type="button"
-            className="cao-btn"
+            size="xs"
+            variant="light"
             data-testid="open-webui"
             onClick={() => {
               if (app) void app.openLink(WEB_UI_URL).catch(() => undefined);
             }}
           >
             Open full Web UI ↗
-          </button>
-        </div>
+          </Button>
+        </Group>
       )}
       {unreachable && (
-        <div
-          className="cao-taskcontrol-error"
+        <Alert
+          color="danger"
+          variant="light"
           role="alert"
           data-testid="retry-banner"
+          mt="xs"
         >
-          Backplane unreachable.{" "}
-          <button
-            type="button"
-            className="cao-btn"
-            data-testid="retry-button"
-            onClick={() => {
-              if (app) {
-                void app
-                  .callServerTool("render_dashboard")
-                  .then((s) => {
-                    setUnreachable(false);
-                    applyDelta(s as DashboardSnapshot);
-                  })
-                  .catch(() => setUnreachable(true));
-              }
-            }}
-          >
-            Retry
-          </button>
-        </div>
+          <Group gap="xs" wrap="wrap">
+            <Text size="sm">Backplane unreachable.</Text>
+            <Button
+              type="button"
+              size="xs"
+              variant="light"
+              color="danger"
+              data-testid="retry-button"
+              onClick={() => {
+                if (app) {
+                  void app
+                    .callServerTool("render_dashboard")
+                    .then((s) => {
+                      setUnreachable(false);
+                      applyDelta(s as DashboardSnapshot);
+                    })
+                    .catch(() => setUnreachable(true));
+                }
+              }}
+            >
+              Retry
+            </Button>
+          </Group>
+        </Alert>
       )}
       {snapshot.terminals.length === 0 ? (
-        <div className="cao-events-empty" data-testid="empty-placeholder">
+        <Text
+          size="sm"
+          c="dimmed"
+          className="cao-events-empty"
+          data-testid="empty-placeholder"
+        >
           No active agents
-        </div>
+        </Text>
       ) : (
-        <div className="cao-grid" data-testid="agent-grid">
+        <Box className="cao-grid" data-testid="agent-grid">
           {orderFleet(snapshot.terminals).map((terminal) => (
             <AgentStatus
               key={terminal.id}
@@ -194,8 +207,8 @@ export function Dashboard({
               isSupervisor={isSupervisorTerminal(terminal)}
             />
           ))}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

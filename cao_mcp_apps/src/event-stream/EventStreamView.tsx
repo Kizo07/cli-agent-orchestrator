@@ -6,6 +6,7 @@
 // history replay, so a dropped event is never permanently lost.
 
 import React, { useEffect, useRef, useState } from "react";
+import { Box } from "@mantine/core";
 import { EventStream } from "../shared/EventStream";
 import { HeaderBar } from "../shared/HeaderBar";
 import { McpApp } from "../shared/mcpApp";
@@ -36,7 +37,7 @@ export function EventStreamView({
   initialEvents,
   backplaneBaseUrl = "http://127.0.0.1:9889",
   eventSourceFactory,
-}: EventStreamViewProps): JSX.Element {
+}: EventStreamViewProps): React.JSX.Element {
   const [events, setEvents] = useState<CaoEvent[]>(initialEvents ?? []);
   const seen = useRef<Set<string>>(
     new Set((initialEvents ?? []).map((e) => e.id)),
@@ -88,9 +89,9 @@ export function EventStreamView({
   }, [app]);
 
   return (
-    <div className="cao-root">
+    <Box className="cao-root">
       <HeaderBar title="Governance Stream" />
       <EventStream events={events} emptyLabel="No fleet events yet" />
-    </div>
+    </Box>
   );
 }

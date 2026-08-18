@@ -7,8 +7,9 @@
 //   - scope-gated button rendering: controls whose required scope is absent are
 //     hidden (and the default-off full-scope case shows everything).
 
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "./renderWithTheme";
 import { Dashboard } from "../dashboard/Dashboard";
 import { AgentStatus } from "../shared/AgentStatus";
 import { EventStream } from "../shared/EventStream";

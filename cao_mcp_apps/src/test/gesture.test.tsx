@@ -10,8 +10,9 @@
 //   - model-context notes are silent (no inference trigger), body-free, and
 //     failure-tolerant.
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "./renderWithTheme";
 import {
   buildGesturePayload,
   describeGesture,

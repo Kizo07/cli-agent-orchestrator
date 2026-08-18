@@ -7,14 +7,9 @@
 //   - re-mount idempotence: `oninitialized` replay + re-mount
 //     hydration both reproduce the same governance timeline.
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { render } from "./renderWithTheme";
 import { Dashboard } from "../dashboard/Dashboard";
 import { EventStreamView } from "../event-stream/EventStreamView";
 import { AgentView } from "../agent/AgentView";

@@ -5,6 +5,7 @@
 // inject markup (XSS safety).
 
 import React from "react";
+import { List, Text } from "@mantine/core";
 import type { CaoEvent, CaoEventKind } from "./types";
 
 const KIND_LABEL: Record<CaoEventKind, string> = {
@@ -32,33 +33,42 @@ export interface EventStreamProps {
 export function EventStream({
   events,
   emptyLabel,
-}: EventStreamProps): JSX.Element {
+}: EventStreamProps): React.JSX.Element {
   if (events.length === 0) {
     return (
-      <div
-        className="cao-events cao-events-empty"
+      <Text
+        size="sm"
+        c="dimmed"
+        className="cao-events-empty"
         data-testid="event-stream-empty"
       >
         {emptyLabel ?? "No events yet"}
-      </div>
+      </Text>
     );
   }
   return (
-    <ul className="cao-events" data-testid="event-stream">
+    <List
+      listStyleType="none"
+      spacing={4}
+      className="cao-events"
+      data-testid="event-stream"
+    >
       {events.map((event) => (
-        <li
+        <List.Item
           key={event.id}
           className={`cao-event cao-event-${event.kind}`}
           data-testid="event-row"
           data-kind={event.kind}
         >
-          <span className="cao-event-kind">
+          <Text span fw={600} className="cao-event-kind">
             {KIND_LABEL[event.kind] ?? "other"}
-          </span>
-          <span className="cao-event-summary">{summarize(event)}</span>
+          </Text>
+          <Text span className="cao-event-summary">
+            {summarize(event)}
+          </Text>
           <time className="cao-event-time">{event.timestamp}</time>
-        </li>
+        </List.Item>
       ))}
-    </ul>
+    </List>
   );
 }

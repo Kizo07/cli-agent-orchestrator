@@ -4,6 +4,7 @@
 // (no `dangerouslySetInnerHTML`), satisfying the escaped-string requirement.
 
 import React from "react";
+import { Badge, Group, Title } from "@mantine/core";
 
 export interface HeaderBarProps {
   title: string;
@@ -15,24 +16,43 @@ export function HeaderBar({
   title,
   sessions,
   terminals,
-}: HeaderBarProps): JSX.Element {
+}: HeaderBarProps): React.JSX.Element {
   return (
-    <header className="cao-header">
-      <h1 className="cao-header-title">{title}</h1>
+    <Group
+      component="header"
+      className="cao-header"
+      mb="sm"
+      gap="sm"
+      align="baseline"
+      wrap="wrap"
+    >
+      <Title order={1} className="cao-header-title" size="md">
+        {title}
+      </Title>
       {(sessions !== undefined || terminals !== undefined) && (
-        <div className="cao-header-counts" data-testid="header-counts">
+        <Group gap="xs" data-testid="header-counts">
           {sessions !== undefined && (
-            <span className="cao-badge" data-testid="count-sessions">
+            <Badge
+              size="xs"
+              variant="light"
+              color="neutral"
+              data-testid="count-sessions"
+            >
               {sessions} sessions
-            </span>
+            </Badge>
           )}
           {terminals !== undefined && (
-            <span className="cao-badge" data-testid="count-terminals">
+            <Badge
+              size="xs"
+              variant="light"
+              color="neutral"
+              data-testid="count-terminals"
+            >
               {terminals} agents
-            </span>
+            </Badge>
           )}
-        </div>
+        </Group>
       )}
-    </header>
+    </Group>
   );
 }

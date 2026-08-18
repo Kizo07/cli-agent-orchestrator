@@ -1,9 +1,12 @@
 // AgentStatus — a single agent (terminal) card with a status badge.
 //
 // Status text/provider/profile are rendered as escaped React children. The
-// status string is also normalized to a CSS modifier class for the badge color.
+// status string is also normalized to a CSS modifier class for the badge color
+// (the color resolves to the host-overridable `--cao-status-<role>` variable,
+// preserving SEP-1865 theming).
 
 import React from "react";
+import { Badge, Card, Group, Stack, Text } from "@mantine/core";
 import type { TerminalView } from "./types";
 import { STATUS } from "./status.generated";
 
@@ -22,7 +25,7 @@ export function AgentStatus({
   terminal,
   onOpen,
   isSupervisor = false,
-}: AgentStatusProps): JSX.Element {
+}: AgentStatusProps): React.JSX.Element {
   const status = (terminal.status ?? "unknown").toLowerCase();
   const statusClass = KNOWN_STATUSES.has(status) ? status : "unknown";
   // Label/role/pulse are derived from the generated status SSOT; the color is
@@ -31,41 +34,65 @@ export function AgentStatus({
   const semantics = STATUS[statusClass];
   const pulseClass = semantics?.pulse ? " cao-status-pulse" : "";
   return (
-    <div
+    <Card
       className={`cao-card${isSupervisor ? " cao-card-supervisor" : ""}`}
       data-testid="agent-card"
       data-terminal-id={terminal.id}
       role={onOpen ? "button" : undefined}
       tabIndex={onOpen ? 0 : undefined}
       onClick={onOpen ? () => onOpen(terminal.id) : undefined}
+      onKeyDown={
+        onOpen
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpen(terminal.id);
+              }
+            }
+          : undefined
+      }
+      padding="sm"
+      withBorder
     >
-      <div className="cao-card-head">
-        <span className="cao-card-title">
+      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+        <Text fw={600} size="sm" style={{ overflowWrap: "anywhere" }}>
           {terminal.agent_profile ?? terminal.id}
           {isSupervisor && (
-            <span className="cao-role-badge" data-testid="role-badge">
+            <Badge
+              size="xs"
+              variant="light"
+              color="info"
+              ml={8}
+              data-testid="role-badge"
+            >
               supervisor
-            </span>
+            </Badge>
           )}
-        </span>
-        <span
+        </Text>
+        <Badge
+          size="xs"
+          variant="light"
           className={`cao-status cao-status-${statusClass}${pulseClass}`}
           data-testid="status-badge"
           title={semantics?.label}
         >
           {status}
-        </span>
-      </div>
-      <dl className="cao-card-meta">
-        <div>
-          <dt>provider</dt>
-          <dd>{terminal.provider}</dd>
-        </div>
-        <div>
-          <dt>session</dt>
-          <dd>{terminal.session_name}</dd>
-        </div>
-      </dl>
-    </div>
+        </Badge>
+      </Group>
+      <Stack gap={2} mt="xs">
+        <Text size="xs" c="dimmed">
+          <Text span fw={600} inherit>
+            provider
+          </Text>{" "}
+          {terminal.provider}
+        </Text>
+        <Text size="xs" c="dimmed">
+          <Text span fw={600} inherit>
+            session
+          </Text>{" "}
+          {terminal.session_name}
+        </Text>
+      </Stack>
+    </Card>
   );
 }

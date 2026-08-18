@@ -24,7 +24,12 @@ const BUDGETS = [
   { file: "dashboard.html", limitKb: 250 },
   { file: "agent.html", limitKb: 250 },
   { file: "event-stream.html", limitKb: 150 },
-  { file: "graph.html", limitKb: 120 },
+  // Re-baselined 2026-08-17 (Mantine migration): the single-file constraint
+  // (vite-plugin-singlefile + inlineDynamicImports) precludes code-splitting,
+  // so every view carries the full React 19 + Mantine core floor (~113 KB gz)
+  // plus the retained sigma payload (~42 KB gz). The previous 120 KB figure
+  // was sized to the pre-Mantine ~86.3 KB sigma-only bundle.
+  { file: "graph.html", limitKb: 160 },
 ];
 
 let failed = 0;

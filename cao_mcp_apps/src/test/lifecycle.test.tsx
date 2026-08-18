@@ -14,14 +14,9 @@
 // They assert real behaviour (not coverage for its own sake): every case here
 // maps to a documented part of the bridge/view contract.
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { render } from "./renderWithTheme";
 import { AgentView } from "../agent/AgentView";
 import {
   EventStreamView,

@@ -7,7 +7,13 @@
  *
  * The :root fallback block is generated from the shared design-token SSOT
  * (design-tokens/tokens.json) via `node design-tokens/gen.mjs`. Host CSS
- * variables still override these defaults at runtime — theming is preserved. */
+ * variables still override these defaults at runtime — theming is preserved.
+ *
+ * NOTE (Mantine migration): interactive primitives (buttons, inputs, badges,
+ * cards, alerts, lists, textareas) are now Mantine components. This stylesheet
+ * keeps only the layout layer (container queries, grid tracks), the
+ * status/event color tokens (host-overridable via --cao-status-*), and the
+ * sigma canvas chrome. */
 
 @import "./tokens.generated.css";
 
@@ -31,24 +37,6 @@ body {
   overflow-x: hidden;
 }
 
-.cao-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 12px;
-  margin-bottom: 12px;
-}
-
-.cao-header-title {
-  font-size: 1rem;
-  margin: 0;
-}
-
-.cao-badge {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-}
-
 /* Default (and narrow): a single column. */
 .cao-grid {
   display: grid;
@@ -56,57 +44,9 @@ body {
   gap: 10px;
 }
 
-.cao-card {
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--border-radius-md);
-  padding: 10px;
-  background: var(--color-background-secondary);
-  /* Long values wrap instead of forcing horizontal overflow. */
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.cao-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.cao-card-title {
-  font-weight: 600;
-}
-
-.cao-card-meta {
-  margin: 8px 0 0;
-  display: grid;
-  gap: 2px;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-}
-
-.cao-card-meta dt {
-  display: inline;
-  font-weight: 600;
-  margin-right: 4px;
-}
-
-.cao-card-meta dd {
-  display: inline;
-  margin: 0;
-}
-
-.cao-status {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border-primary);
-}
-
 /* Status colors map status -> semantic role -> host-overridable CSS variable
  * (defined in tokens.generated.css). The status -> role mapping mirrors the
- * SSOT in design-tokens/status.json. */
+ * SSOT in design-tokens/status.json. Applied on top of the Mantine Badge. */
 .cao-status-idle {
   color: var(--cao-status-success);
 }
@@ -139,12 +79,14 @@ body {
   }
 }
 
-.cao-events {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 4px;
+/* Governance ticker rows: kind | summary | time, with a kind-colored left
+ * border. Rendered inside Mantine List items. */
+/* Mantine List.Item wraps children in an itemWrapper div (and an itemLabel
+ * span). display:contents lets the three row cells participate in the li's
+ * grid directly, restoring the legacy kind|summary|time layout. */
+.cao-event > div,
+.cao-event > div > span {
+  display: contents;
 }
 
 .cao-event {
@@ -182,80 +124,10 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.cao-taskcontrol {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.cao-taskcontrol-input {
-  width: 100%;
-  font: inherit;
-  padding: 6px;
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--border-radius-md);
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-  resize: vertical;
-}
-
-.cao-taskcontrol-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.cao-btn {
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 4px 10px;
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--border-radius-md);
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.cao-btn-danger {
-  color: var(--color-text-danger);
-  background: var(--color-background-danger);
-}
-
-.cao-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 6px 8px 0;
-}
-
 /* Supervisor (fleet coordinator) distinction. */
 .cao-card-supervisor {
   border-color: var(--color-border-info, #4c8bf5);
   box-shadow: inset 3px 0 0 0 var(--color-border-info, #4c8bf5);
-}
-.cao-role-badge {
-  margin-left: 8px;
-  padding: 1px 6px;
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-semibold, 600);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-radius: var(--border-radius-full, 999px);
-  color: var(--color-text-info, #1a56db);
-  background: var(--color-background-info, #e8f0fe);
-  vertical-align: middle;
-}
-
-.cao-taskcontrol-error {
-  color: var(--color-text-danger);
-  font-size: 0.8rem;
-  margin: 0;
-}
-
-.cao-events-empty {
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  padding: 8px 0;
 }
 
 .cao-graph-canvas {
@@ -287,4 +159,15 @@ body {
   .cao-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+/* Fleet cards: overflow safety (legacy .cao-card behavior) + visible keyboard
+ * focus ring for role="button" cards (Mantine Card carries no focus style). */
+.cao-card {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.cao-card[role="button"]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
