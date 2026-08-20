@@ -14,6 +14,23 @@ export function setControlToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token.trim())
 }
 
+// Agent-system fork: Mission Control embeds this UI in an iframe and passes
+// the control token via the URL fragment — fragments never reach the server
+// and never hit any log. Consume it once into localStorage (the same place a
+// manual paste would put it) and strip it from the hash.
+;(function bootstrapTokenFromFragment(): void {
+  try {
+    const h = window.location.hash
+    const m = h.match(/[#&]cao_token=([^&]+)/)
+    if (!m) return
+    const t = decodeURIComponent(m[1])
+    if (t) localStorage.setItem(TOKEN_KEY, t)
+    const rest = h.replace(/([#&])cao_token=[^&]+&?/, '$1').replace(/[#&]$/, '')
+    const clean = rest && rest !== '#' ? rest : ''
+    window.history.replaceState(null, '', window.location.pathname + window.location.search + clean)
+  } catch { /* storage unavailable (private mode / partitioned) */ }
+})()
+
 /** Query-string auth for the PTY websocket handshake. */
 export function wsAuthQuery(): string {
   const t = getControlToken()
