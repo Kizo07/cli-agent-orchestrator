@@ -115,6 +115,21 @@ export default function App() {
     return () => window.removeEventListener('cao-auth-required', onAuthRequired)
   }, [])
 
+  // Agent-system fork: Mission Control seeds the token (URL fragment or
+  // postMessage) — dismiss an already-rendered gate and refetch.
+  useEffect(() => {
+    const onToken = () => {
+      setAuthNeeded(false)
+      fetchSessions()
+      api
+        .getMemoryStatus()
+        .then((s) => setMemoryEnabled(s.enabled))
+        .catch(() => {})
+    }
+    window.addEventListener('cao-token-provided', onToken)
+    return () => window.removeEventListener('cao-token-provided', onToken)
+  }, [])
+
   // Keyboard shortcuts: Alt+1-N over the visible tabs
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

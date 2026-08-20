@@ -6,13 +6,29 @@ const BASE = ''  // Vite proxy handles routing to backend
 // query param (PTY websocket).
 const TOKEN_KEY = 'cao_control_token'
 
+// In-memory fallback: in embedded (third-party) frames localStorage can be
+// blocked or partitioned away — the token still works for the page lifetime.
+let memoryToken = ''
+
 export function getControlToken(): string {
-  try { return localStorage.getItem(TOKEN_KEY) || '' } catch { return '' }
+  try { return localStorage.getItem(TOKEN_KEY) || memoryToken } catch { return memoryToken }
 }
 
 export function setControlToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token.trim())
+  memoryToken = token.trim()
+  try { localStorage.setItem(TOKEN_KEY, token.trim()) } catch { /* storage blocked */ }
 }
+
+// Mission Control (parent frame) hands the token over via postMessage when
+// the fragment path can't persist it. Origin-pinned to the dashboard only.
+window.addEventListener('message', (ev) => {
+  if (ev.origin !== 'http://127.0.0.1:8790') return
+  const d = ev.data as { type?: string; token?: string } | null
+  if (d && d.type === 'cao-control-token' && typeof d.token === 'string' && d.token) {
+    setControlToken(d.token)
+    window.dispatchEvent(new Event('cao-token-provided'))
+  }
+})
 
 // Agent-system fork: Mission Control embeds this UI in an iframe and passes
 // the control token via the URL fragment — fragments never reach the server
@@ -24,7 +40,10 @@ export function setControlToken(token: string): void {
     const m = h.match(/[#&]cao_token=([^&]+)/)
     if (!m) return
     const t = decodeURIComponent(m[1])
-    if (t) localStorage.setItem(TOKEN_KEY, t)
+    if (t) {
+      setControlToken(t)
+      window.dispatchEvent(new Event('cao-token-provided'))
+    }
     const rest = h.replace(/([#&])cao_token=[^&]+&?/, '$1').replace(/[#&]$/, '')
     const clean = rest && rest !== '#' ? rest : ''
     window.history.replaceState(null, '', window.location.pathname + window.location.search + clean)
