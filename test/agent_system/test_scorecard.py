@@ -23,6 +23,12 @@ AGENT_SYSTEM_ROOT = "/home/fire/Documents/AgentSystem"
 LEGACY_FIXTURES = "/home/fire/Documents/AgentSystem/tools/tests/fixtures/legacy"
 
 
+def _nonblank_lines(path):
+    """Independent record count for a legacy JSONL store (blank lines carry no record)."""
+    with open(path) as f:
+        return sum(1 for line in f if line.strip())
+
+
 @pytest.fixture()
 def conn(tmp_path):
     c = _db.connect(tmp_path / "lifecycle.db")
@@ -61,7 +67,9 @@ def test_rubric_matches_legacy_implementation_on_live_data():
             checked += 1
         except ScoreValidationError:
             preserved += 1
-    assert checked + preserved == 66
+    # Every legacy evaluation row is reconciled; the count is read from the
+    # live store (not hardcoded) so the gate survives history growth.
+    assert checked + preserved == _nonblank_lines(f"{AGENT_SYSTEM_ROOT}/scorecards/evaluations.jsonl")
     assert checked >= 60  # the vast majority validates under the current rubric
 
 
@@ -155,16 +163,21 @@ def test_route_statistics_report_sample_count(conn):
 
 
 def test_migration_is_lossless_by_id_and_count(conn):
+    # Expected counts come from the live legacy stores, not hardcoded
+    # snapshots, so the losslessness gate survives history growth.
+    expected_usage = _nonblank_lines(f"{AGENT_SYSTEM_ROOT}/usage/usage.jsonl")
+    expected_evals = _nonblank_lines(f"{AGENT_SYSTEM_ROOT}/scorecards/evaluations.jsonl")
+    expected_quirks = _nonblank_lines(f"{AGENT_SYSTEM_ROOT}/quirks/quirks.jsonl")
     report = migrate_legacy_stores(conn, AGENT_SYSTEM_ROOT)
-    assert report.usage_rows == 84
-    assert report.evaluation_rows == 66
-    assert report.quirk_rows == 9
+    assert report.usage_rows == expected_usage
+    assert report.evaluation_rows == expected_evals
+    assert report.quirk_rows == expected_quirks
     assert report.foreign_key_ok
     # distinct IDs preserved
     n_usage = conn.execute("SELECT COUNT(DISTINCT usage_id) AS n FROM usage").fetchone()["n"]
-    assert n_usage == 84 + len(report.usage_stubbed_for_fk)
+    assert n_usage == expected_usage + len(report.usage_stubbed_for_fk)
     n_eval = conn.execute("SELECT COUNT(DISTINCT evaluation_id) AS n FROM evaluations").fetchone()["n"]
-    assert n_eval == 66
+    assert n_eval == expected_evals
     # every legacy record byte-recoverable
     row = conn.execute("SELECT legacy_json FROM usage LIMIT 1").fetchone()
     assert json.loads(row["legacy_json"])["usage_id"]
@@ -175,7 +188,7 @@ def test_migration_is_lossless_by_id_and_count(conn):
     preserved = conn.execute(
         "SELECT COUNT(*) AS n FROM evaluations WHERE rubric_version='legacy-preserved'"
     ).fetchone()["n"]
-    assert valid + preserved == 66
+    assert valid + preserved == expected_evals
     assert preserved == len(report.legacy_preserved_evaluations)
 
 

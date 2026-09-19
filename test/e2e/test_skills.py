@@ -269,12 +269,9 @@ class TestOmpSkills:
         _run_skill_injection_test(provider="omp", agent_profile="developer")
 
 
-class TestGrokCliSkills:
-    """E2E runtime skill-catalog injection test for Grok Build CLI."""
-
-    def test_skill_catalog_injected(self, require_grok):
-        """Grok's additive rules contain the CAO worker protocol catalog."""
-        _run_skill_injection_test(provider="grok_cli", agent_profile="developer")
+# NOTE: no Grok skill-injection test — the Grok CLI is no longer available,
+# and this live-CLI test cannot run without it. The require_grok fixture
+# stays for the other (marked e2e) suites that still reference it.
 
 
 # ---------------------------------------------------------------------------
