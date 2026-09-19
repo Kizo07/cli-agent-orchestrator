@@ -1,4 +1,5 @@
-import { AlertTriangle, Loader2, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Loader2 } from 'lucide-react'
 import { ActionIcon, Box, Button, Group, Modal, Stack, Text } from '@mantine/core'
 
 interface ConfirmModalProps {
@@ -10,6 +11,13 @@ interface ConfirmModalProps {
   cancelLabel?: string
   variant?: 'danger' | 'warning'
   loading?: boolean
+  /**
+   * Type-to-confirm gate. When set, an input is shown and the confirm button
+   * stays disabled until the user types this exact string (e.g. the name of
+   * the thing being deleted). Optional and additive: callers that omit it get
+   * the original confirm-on-click behavior.
+   */
+  confirmationText?: string
   onConfirm: () => void
   onCancel: () => void
 }
@@ -23,9 +31,20 @@ export function ConfirmModal({
   cancelLabel = 'Cancel',
   variant = 'danger',
   loading = false,
+  confirmationText,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const [typed, setTyped] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      cancelRef.current?.focus()
+      // Reset per open so a previous confirmation never carries over.
+      setTyped('')
+    }
+  }, [open, confirmationText])
   return (
     <Modal
       opened={open}
@@ -69,14 +88,33 @@ export function ConfirmModal({
         </Box>
       )}
 
+      {/* Type-to-confirm gate */}
+      {confirmationText !== undefined && (
+        <Box mx="md" mb="md">
+          <label htmlFor="confirm-typed" className="block text-xs text-gray-400 mb-1.5">
+            Type <span className="font-mono text-gray-200 select-all">{confirmationText}</span> to confirm:
+          </label>
+          <input
+            id="confirm-typed"
+            aria-label="Confirmation text"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            value={typed}
+            onChange={e => setTyped(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-gray-200 font-mono placeholder-gray-600 focus:outline-none focus:border-red-600"
+          />
+        </Box>
+      )}
+
       <Group justify="flex-end" gap="sm" mt="md">
-        <Button variant="default" onClick={onCancel} disabled={loading}>
+        <Button variant="default" ref={cancelRef} onClick={onCancel} disabled={loading}>
           {cancelLabel}
         </Button>
         <Button
           color={variant === 'danger' ? 'danger' : 'warning'}
           onClick={onConfirm}
-          disabled={loading}
+          disabled={loading || (confirmationText !== undefined && typed !== confirmationText)}
           leftSection={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}
         >
           {loading ? 'Closing...' : confirmLabel}

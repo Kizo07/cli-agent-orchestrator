@@ -6,19 +6,28 @@ import { DashboardHome } from './components/DashboardHome'
 import { AgentPanel } from './components/AgentPanel'
 import { FlowsPanel } from './components/FlowsPanel'
 import { MemoryPanel } from './components/MemoryPanel'
+import { ProfilesPanel } from './components/ProfilesPanel'
 import { SettingsPanel } from './components/SettingsPanel'
-import { Bot, Home, Clock, Settings, Brain, CheckCircle, XCircle, Info, Wifi, WifiOff } from 'lucide-react'
+import { WorkflowsPanel } from './components/WorkflowsPanel'
+import { CaoMark } from './components/CaoMark'
+import { Bot, Home, Clock, Settings, Brain, Workflow, CheckCircle, XCircle, Info, Wifi, WifiOff, Package } from 'lucide-react'
 import { AppShell, Box, Button, Group, Notification, PasswordInput, Tabs, Text, Title } from '@mantine/core'
 
-type TabKey = 'home' | 'agents' | 'flows' | 'settings' | 'memory'
+type TabKey = 'home' | 'profiles' | 'agents' | 'flows' | 'settings' | 'memory' | 'workflows'
 
-// Memory appended last so Alt+N numbering of existing tabs never shifts
+// Profiles sits between Home and Agents (#510): browsing/authoring profiles
+// precedes launching agents, and AgentPanel stays the launch picker. This was
+// a one-time Alt+N renumbering of the tabs after it; Workflows + Memory remain
+// appended last (Memory is conditional, so keeping it last stops the numbering
+// of the always-visible tabs shifting with the memory backend's status).
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'home', label: 'Home', icon: <Home size={16} /> },
+  { key: 'profiles', label: 'Profiles', icon: <Package size={16} /> },
   { key: 'agents', label: 'Agents', icon: <Bot size={16} /> },
   { key: 'flows', label: 'Flows', icon: <Clock size={16} /> },
   { key: 'settings', label: 'Settings', icon: <Settings size={16} /> },
   { key: 'memory', label: 'Memory', icon: <Brain size={16} /> },
+  { key: 'workflows', label: 'Workflows', icon: <Workflow size={16} /> },
 ]
 
 const SNACKBAR_COLORS = { success: 'green', error: 'red', info: 'blue' } as const
@@ -91,10 +100,27 @@ function TokenGate({ onSaved }: { onSaved: () => void }) {
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('home')
+
+  // The ONLY way any surface changes tabs. Refuses while an in-flight
+  // interaction (an authoring modal's save) holds the navigation lock:
+  // switching tabs unmounts the panel and its modal, so a deferred
+  // validation/write rejection would land on an unmounted component and the
+  // unsaved draft would be unrecoverable (#692 review round 7). Reads the
+  // lock through getState() so the keydown listener never closes over a
+  // stale value.
+  const requestTabChange = (t: TabKey) => {
+    if (useStore.getState().navLockCount > 0) return
+    setTab(t)
+  }
   // Default false (fail-closed): a dead backend hides the tab rather than showing a broken panel
   const [memoryEnabled, setMemoryEnabled] = useState(false)
   const [authNeeded, setAuthNeeded] = useState(() => !getControlToken())
   const { sessions, connected, fetchSessions } = useStore()
+  // Subscribed (not just read via getState) so the tab strip re-renders
+  // and visibly reflects the refusal while a save owns navigation --
+  // matching the modal's own disabled Close/Cancel/mode-tab affordances
+  // rather than silently ignoring clicks.
+  const navLocked = useStore(s => s.navLockCount > 0)
 
   const visibleTabs = TABS.filter((t) => t.key !== 'memory' || memoryEnabled)
 
@@ -130,12 +156,23 @@ export default function App() {
     return () => window.removeEventListener('cao-token-provided', onToken)
   }, [])
 
+  // The nav lock stops IN-APP navigation from unmounting an in-flight
+  // save, but browser chrome (reload, tab close) bypasses it entirely --
+  // the same draft-loss path one level up. While the lock is held, ask
+  // the browser to confirm leaving.
+  useEffect(() => {
+    if (!navLocked) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [navLocked])
+
   // Keyboard shortcuts: Alt+1-N over the visible tabs
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.altKey && e.key >= '1' && e.key <= String(visibleTabs.length)) {
         e.preventDefault()
-        setTab(visibleTabs[parseInt(e.key) - 1].key)
+        requestTabChange(visibleTabs[parseInt(e.key) - 1].key)
       }
     }
     window.addEventListener('keydown', handler)
@@ -147,9 +184,7 @@ export default function App() {
       <AppShell.Header withBorder={false} className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm">
         <Group h="100%" mx="auto" maw={1280} px="lg" justify="space-between" gap="md" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
-            <Box className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700">
-              <Bot size={18} className="text-white" />
-            </Box>
+            <CaoMark size={32} />
             <Title order={1} size="lg" className="text-white">
               CLI Agent Orchestrator
             </Title>
@@ -187,7 +222,7 @@ export default function App() {
           />
         )}
 
-        <Tabs value={tab} onChange={(value) => value && setTab(value as TabKey)} keepMounted={false} variant="pills">
+        <Tabs value={tab} onChange={(value) => value && requestTabChange(value as TabKey)} keepMounted={false} variant="pills">
           <Box className="border-b border-gray-800">
             <Tabs.List mx="auto" maw={1280} px="lg" className="flex gap-1 py-2" mb={0}>
               {visibleTabs.map((t, i) => (
@@ -195,7 +230,9 @@ export default function App() {
                   key={t.key}
                   value={t.key}
                   leftSection={t.icon}
-                  title={`Alt+${i + 1}`}
+                  disabled={navLocked && tab !== t.key}
+                  aria-disabled={navLocked && tab !== t.key}
+                  title={navLocked && tab !== t.key ? 'Finish or cancel the in-flight save first' : `Alt+${i + 1}`}
                   className="rounded-lg text-sm font-medium"
                   rightSection={
                     t.key === 'agents' && sessions.length > 0 ? (
@@ -222,11 +259,13 @@ export default function App() {
                       </Box>
                     }
                   >
-                    {t.key === 'home' && <DashboardHome onNavigate={(k) => setTab(k as TabKey)} />}
+                    {t.key === 'home' && <DashboardHome onNavigate={(k) => requestTabChange(k as TabKey)} />}
+                    {t.key === 'profiles' && <ProfilesPanel />}
                     {t.key === 'agents' && <AgentPanel />}
                     {t.key === 'flows' && <FlowsPanel />}
                     {t.key === 'settings' && <SettingsPanel />}
                     {t.key === 'memory' && <MemoryPanel />}
+                    {t.key === 'workflows' && <WorkflowsPanel />}
                   </Suspense>
                 </ErrorBoundary>
               </Box>

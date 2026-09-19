@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { X, Terminal as TermIcon } from 'lucide-react'
 import { ActionIcon, Badge } from '@mantine/core'
-import { wsAuthQuery } from '../api'
+import { terminalSocketUrl, wsAuthQuery } from '../api'
 
 interface TerminalViewProps {
   terminalId: string
@@ -50,8 +50,7 @@ export function TerminalView({ terminalId, provider, agentProfile, onClose, focu
     termRef.current = term
 
     // Connect WebSocket (control-token auth via access_token query param)
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(`${protocol}//${location.host}/terminals/${terminalId}/ws${wsAuthQuery()}`)
+    const ws = new WebSocket(`${terminalSocketUrl(terminalId)}${wsAuthQuery()}`)
     ws.binaryType = 'arraybuffer'
 
     ws.onopen = () => {

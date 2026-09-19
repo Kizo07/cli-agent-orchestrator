@@ -7,7 +7,7 @@
 // pixels.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from './renderWithTheme'
+import { render, screen, fireEvent, waitFor, cleanup, within } from './renderWithTheme'
 import { useStore } from '../store'
 
 type AnyHandler = (payload: any) => void
@@ -129,11 +129,12 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
     vi.restoreAllMocks()
   })
 
-  // The scope CustomSelect (Mantine Select) renders its selected label ("All scopes")
-  // in a read-only combobox input; open the dropdown and choose a scope by option role.
+  // The scope CustomSelect renders a button trigger (named via ariaLabel) with
+  // a portaled menu; open it and choose a scope by its menu-button name.
   async function selectScope(scopeName: string) {
-    fireEvent.click(screen.getAllByRole('combobox')[0])
-    fireEvent.click(await screen.findByRole('option', { name: scopeName }))
+    fireEvent.click(screen.getByRole('button', { name: 'Memory scope' }))
+    const menu = await screen.findByTestId('custom-select-menu')
+    fireEvent.click(within(menu).getByRole('button', { name: scopeName }))
   }
 
   async function selectGlobalScope() {
@@ -150,6 +151,7 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
         status,
         statusText: status === 200 ? 'OK' : 'Error',
         json: () => Promise.resolve(body),
+        text: () => Promise.resolve(JSON.stringify(body)),
       })
     })
   }
@@ -510,12 +512,13 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
           status: 200,
           statusText: 'OK',
           json: () => Promise.resolve(PROJECT_GRAPH),
+          text: () => Promise.resolve(JSON.stringify(PROJECT_GRAPH)),
         }))
       }
       if (u.startsWith('/graph/memory?scope=global')) {
-        return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(GRAPH) })
+        return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(GRAPH), text: () => Promise.resolve(JSON.stringify(GRAPH)) })
       }
-      return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(MEMORIES) })
+      return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(MEMORIES), text: () => Promise.resolve(JSON.stringify(MEMORIES)) })
     })
 
     render(<MemoryPanel />)
@@ -567,12 +570,13 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
           status: 500,
           statusText: 'Server Error',
           json: () => Promise.resolve({ detail: 'boom' }),
+          text: () => Promise.resolve(JSON.stringify({ detail: 'boom' })),
         }))
       }
       if (u.startsWith('/graph/memory?scope=global')) {
-        return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(GRAPH) })
+        return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(GRAPH), text: () => Promise.resolve(JSON.stringify(GRAPH)) })
       }
-      return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(MEMORIES) })
+      return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(MEMORIES), text: () => Promise.resolve(JSON.stringify(MEMORIES)) })
     })
 
     render(<MemoryPanel />)
@@ -622,12 +626,13 @@ describe('MemoryPanel — List⇄Graph toggle & graph view', () => {
           status: 200,
           statusText: 'OK',
           json: () => Promise.resolve(GRAPH),
+          text: () => Promise.resolve(JSON.stringify(GRAPH)),
         }))
       }
       if (u.startsWith('/graph/memory?scope=global')) {
         return globalGate
       }
-      return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(MEMORIES) })
+      return Promise.resolve({ ok: true, status: 200, statusText: 'OK', json: () => Promise.resolve(MEMORIES), text: () => Promise.resolve(JSON.stringify(MEMORIES)) })
     })
 
     render(<MemoryPanel />)

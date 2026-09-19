@@ -205,6 +205,7 @@ export function MemoryPanel() {
           onChange={setScopeFilter}
           options={SCOPE_OPTIONS}
           className="w-40"
+          ariaLabel="Memory scope"
         />
 
         {/* Graph + project needs a concrete scope_id (defaulted from the listed
@@ -250,6 +251,7 @@ export function MemoryPanel() {
             onChange={setTypeFilter}
             options={TYPE_OPTIONS}
             className="w-40"
+            ariaLabel="Memory type"
           />
           <TextInput
             value={search}
